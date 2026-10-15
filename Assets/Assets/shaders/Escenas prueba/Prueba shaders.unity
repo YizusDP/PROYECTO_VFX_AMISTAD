@@ -503,9 +503,25 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2688212080647324685, guid: b9637917512049f429e040a35a8c9331, type: 3}
+      propertyPath: lengthInSec
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 2688212080647324685, guid: b9637917512049f429e040a35a8c9331, type: 3}
+      propertyPath: InitialModule.startLifetime.scalar
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 4966803076178567086, guid: b9637917512049f429e040a35a8c9331, type: 3}
       propertyPath: m_Name
       value: "Explosi\xF3n horizontal"
+      objectReference: {fileID: 0}
+    - target: {fileID: 7702277249951634185, guid: b9637917512049f429e040a35a8c9331, type: 3}
+      propertyPath: lengthInSec
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 7702277249951634185, guid: b9637917512049f429e040a35a8c9331, type: 3}
+      propertyPath: InitialModule.startLifetime.scalar
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 8392996870523359017, guid: b9637917512049f429e040a35a8c9331, type: 3}
       propertyPath: m_LocalPosition.x
