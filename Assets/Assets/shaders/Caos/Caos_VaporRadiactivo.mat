@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Caos_VaporRadiactivo
+  m_Shader: {fileID: 4800000, guid: d0f99ac8d90427740a7dbf45db3eedd4, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: 3005
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _Ruido:
+        m_Texture: {fileID: 2800000, guid: da28f90f41d2451ca06ffa5ee076feb2, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _Ancho: 0.85
+    - _Distorsion: 0.22
+    - _DstBlend: 10
+    - _Erosion: 0.85
+    - _EscalaRuido: 1.6
+    - _FuerzaCalor: 0.02
+    - _Intensidad: 1
+    - _Modo: 2
+    - _SrcBlend: 5
+    - _SuavidadSuelo: 4
+    - _Velocidad: 0.8
+    m_Colors:
+    - _ColorBase: {r: 0.35, g: 1.6, b: 0.3, a: 1}
+    - _ColorMedio: {r: 6, g: 1.5, b: 0.12, a: 1}
+    - _ColorPunta: {r: 10, g: 6, b: 2.2, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
