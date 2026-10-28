@@ -34,7 +34,12 @@ public static class DerrumbeEditor
     const float DuracionSim = 7f;         // segundos simulados
     const float FPS = 30f;                // cuadros grabados por segundo
     const float AlturaMC = 2.0f;          // metros que mide el personaje de referencia (MEMO_PERFIL)
-    const double InicioEnTimeline = 18.8; // segundo del Timeline maestro en que empieza el clip
+    const double InicioEnTimeline = 18.8; // segundo del Timeline maestro en que empieza el clip (primer edificio)
+    // Para otros edificios (los fija la herramienta "Derrumbar edificio seleccionado"):
+    static double s_inicio = InicioEnTimeline;     // segundo del principal
+    static Vector3? s_refVista = null;              // hacia dónde cae (la cámara que lo ve); null = Memi
+    static bool s_enCiudad = false;                 // pista en el Timeline de la ciudad (no en el principal)
+    static bool s_explosion = false;                // explosión antes de caer
     const float VelocidadClip = 0.7f;     // < 1 = cámara lenta (se cambia en el clip: Speed Multiplier)
     const float InicioFalla = 0.15f;      // segundos de calma antes de que fallen las columnas
     const float GiroInicial = 0.35f;      // rad/s con que se ladea el bloque al fallar la planta baja
@@ -88,6 +93,7 @@ public static class DerrumbeEditor
         var mats = mrSrc.sharedMaterials;
 
         string nombre = edificio.name.Replace(".", "");
+        if (edificio.parent != null && edificio.parent != city) nombre += "_" + edificio.parent.name;   // nombres únicos: hay varios ruim.008
         string nombreRaiz = "DERRUMBE_" + nombre;
         var log = new StringBuilder();
         Random.InitState(Semilla);
@@ -230,7 +236,8 @@ public static class DerrumbeEditor
 
         // Dirección de caída: hacia la cámara, girada un poco a la derecha (por el hueco entre las paredes de fuego)
         Vector3 inclin = Vector3.ProjectOnPlane(eje, Vector3.up);
-        Vector3 vista = memo != null ? Vector3.ProjectOnPlane(centroMarco - memo.position, Vector3.up).normalized : Vector3.forward;
+        Vector3 refV = s_refVista ?? (memo != null ? memo.position : centroMarco - Vector3.forward);
+        Vector3 vista = Vector3.ProjectOnPlane(centroMarco - refV, Vector3.up).normalized;
         Vector3 izq = Vector3.Cross(vista, Vector3.up).normalized;
         Vector3 dir = Quaternion.AngleAxis(-GiroDireccion, Vector3.up) * (-vista);
         if (Vector3.Dot(dir, -izq) < 0f) dir = Quaternion.AngleAxis(GiroDireccion, Vector3.up) * (-vista);
@@ -661,7 +668,8 @@ public static class DerrumbeEditor
         edificio.gameObject.SetActive(false);
 
         float duracionLocal = DuracionSim + VidaPolvo;
-        string infoTl = AgregarPista(todos, comp, duracionLocal, edificio.name);
+        string infoTl = AgregarPista(todos, comp, duracionLocal, nombre);
+        if (s_explosion) infoTl += "\n" + CrearExplosion(todos, raiz.transform, edificio, mats, suelo);
         log.AppendLine(infoTl);
 
         File.WriteAllText(Path.Combine(Application.dataPath, "../Logs/derrumbe_" + nombre + ".txt"), log.ToString());
@@ -959,15 +967,15 @@ public static class DerrumbeEditor
             foreach (var vieja in ta.GetOutputTracks().OfType<DerrumbeTrack>().Where(t => t.name == nombrePista).ToList()) ta.DeleteTrack(vieja);
             EditorUtility.SetDirty(ta);
         }
-        var director = todos.FirstOrDefault(t => t != null && t.name == "Director_P1_Bosque")?.GetComponent<PlayableDirector>();
+        var director = todos.FirstOrDefault(t => t != null && t.name == (s_enCiudad ? "Director_P2_Ciudad" : "Director_P1_Bosque"))?.GetComponent<PlayableDirector>();
         var tl = director != null ? director.playableAsset as TimelineAsset : null;
-        if (tl == null) return "No encontré el Timeline de Director_P1_Bosque: agrega una pista Derrumbe a mano.";
+        if (tl == null) return "No encontré el Timeline del director: agrega una pista Derrumbe a mano.";
 
         Undo.RecordObject(tl, "Pista de derrumbe");
         var pista = tl.CreateTrack<DerrumbeTrack>(null, nombrePista);
         var clip = pista.CreateClip<DerrumbeClip>();
         ((DerrumbeClip)clip.asset).duracionHorneada = duracionLocal;
-        clip.start = InicioEnTimeline;
+        clip.start = s_enCiudad ? s_inicio - 17.5 : s_inicio;
         clip.timeScale = VelocidadClip;
         clip.duration = duracionLocal / VelocidadClip;
         clip.displayName = "Derrumbe " + nombreEdificio;
@@ -981,6 +989,225 @@ public static class DerrumbeEditor
         var tRazon = System.Type.GetType("UnityEditor.Timeline.RefreshReason, Unity.Timeline.Editor");
         if (tEditor != null && tRazon != null)
             try { tEditor.GetMethod("Refresh")?.Invoke(null, new object[] { System.Enum.Parse(tRazon, "ContentsAddedOrRemoved") }); } catch { }
-        return $"Pista '{nombrePista}' en {tl.name}: empieza en {InicioEnTimeline:0.0} s, velocidad {VelocidadClip}, dura {clip.duration:0.0} s.";
+        return $"Pista '{nombrePista}' en {tl.name}: empieza en {s_inicio:0.00} s del principal, velocidad {VelocidadClip}, dura {clip.duration:0.0} s.";
     }
+
+    // =====================================================================================================
+    // Tools > Amistad > Derrumbar edificio seleccionado (explosión, vista de la avioneta)
+    // Para otro edificio (por ejemplo AVENIDA_ALE/Av_Der_009/ruim.008): explota y luego se derrumba.
+    // Busca el momento en que la cámara de la avioneta (CM4) lo ve, lo más cerca posible de que Goku se vuelve SSJ,
+    // y hace que caiga hacia esa cámara. La pista y la explosión van en el Timeline de la ciudad.
+    // =====================================================================================================
+    const float MomentoIdeal = 35.0f;       // explota cuando Goku llega volando, antes del SSJ (tiempo del principal)
+    const float BuscarDesde = 33.5f, BuscarHasta = 40.6f;
+
+    [MenuItem("Tools/Amistad/Derrumbar edificio seleccionado (explosión)")]
+    static void DerrumbarSeleccionado()
+    {
+        var sel = Selection.activeTransform;
+        // Si ya se derrumbó, se puede seleccionar DERRUMBE_<nombre> para rehacerlo: busco el edificio original (apagado).
+        if (sel != null && sel.name.StartsWith("DERRUMBE_"))
+        {
+            string buscado = sel.name.Substring(9);
+            var orig = SceneManager.GetActiveScene().GetRootGameObjects().SelectMany(g => g.GetComponentsInChildren<Transform>(true))
+                .FirstOrDefault(t => t.name.StartsWith("ruim") && t.GetComponent<MeshFilter>() != null &&
+                                     (t.name.Replace(".", "") + (t.parent != null && t.parent.name != "CITY" ? "_" + t.parent.name : "")) == buscado);
+            if (orig != null) sel = orig;
+        }
+        if (sel == null || sel.GetComponent<MeshFilter>() == null) { EditorUtility.DisplayDialog("Derrumbe", "Selecciona en el Hierarchy la malla del edificio (por ejemplo AVENIDA_ALE/Av_Der_009/ruim.008).", "OK"); return; }
+        var todos = SceneManager.GetActiveScene().GetRootGameObjects().SelectMany(g => g.GetComponentsInChildren<Transform>(true)).ToList();
+        Transform T(string n) => todos.FirstOrDefault(t => t != null && t.name == n);
+        var av = T("AVIONETA"); var pov = T("AVIONETA_POV");
+        var clipAv = AssetDatabase.LoadAssetAtPath<AnimationClip>("Assets/Assets/3d/Avioneta/Avioneta_Vuelo.anim");
+        var tlC = T("Director_P2_Ciudad")?.GetComponent<PlayableDirector>()?.playableAsset as TimelineAsset;
+        var pistaAv = tlC?.GetOutputTracks().OfType<AnimationTrack>().FirstOrDefault(t => t.name.StartsWith("Avioneta"));
+        var mf = sel.GetComponent<MeshFilter>();
+        var b = CajaMundo(mf);
+        var log = new StringBuilder();
+        double inicio = MomentoIdeal; Vector3? refV = null;
+        if (av != null && pov != null && clipAv != null && pistaAv != null)
+        {
+            float t0 = (float)pistaAv.GetClips().First().start + 17.5f;
+            AnimationCurve C(string path, string p) => AnimationUtility.GetEditorCurve(clipAv, EditorCurveBinding.FloatCurve(path, typeof(Transform), p));
+            var px = C("", "m_LocalPosition.x"); var py = C("", "m_LocalPosition.y"); var pz = C("", "m_LocalPosition.z");
+            var qx = C("", "m_LocalRotation.x"); var qy = C("", "m_LocalRotation.y"); var qz = C("", "m_LocalRotation.z"); var qw = C("", "m_LocalRotation.w");
+            var vx = C("AVIONETA_POV", "m_LocalRotation.x"); var vy = C("AVIONETA_POV", "m_LocalRotation.y"); var vz = C("AVIONETA_POV", "m_LocalRotation.z"); var vw = C("AVIONETA_POV", "m_LocalRotation.w");
+            var camLocal = Vector3.Scale(pov.localPosition, av.lossyScale);
+            float mejor = float.MaxValue; float tMejor = -1; Vector3 posMejor = Vector3.zero; Vector2 vpMejor = Vector2.zero;
+            for (float t = BuscarDesde; t <= BuscarHasta; t += 0.05f)
+            {
+                float l = t - t0;
+                var pa = new Vector3(px.Evaluate(l), py.Evaluate(l), pz.Evaluate(l));
+                var qa = new Quaternion(qx.Evaluate(l), qy.Evaluate(l), qz.Evaluate(l), qw.Evaluate(l)).normalized;
+                var qv = vx != null ? new Quaternion(vx.Evaluate(l), vy.Evaluate(l), vz.Evaluate(l), vw.Evaluate(l)).normalized : Quaternion.identity;
+                var camPos = pa + qa * camLocal; var camRot = qa * qv;
+                var v = Quaternion.Inverse(camRot) * (b.center - camPos);
+                if (v.z <= 1f) continue;
+                float x = (v.x / v.z) / (Mathf.Tan(30f * Mathf.Deg2Rad) * 16f / 9f), y = (v.y / v.z) / Mathf.Tan(30f * Mathf.Deg2Rad);
+                bool dentro = Mathf.Abs(x) < 0.75f && Mathf.Abs(y) < 0.85f;
+                float costo = (dentro ? 0f : 100f + Mathf.Abs(x)) + Mathf.Abs(t - MomentoIdeal);
+                if (costo < mejor) { mejor = costo; tMejor = t; posMejor = camPos; vpMejor = new Vector2(x, y); }
+            }
+            if (tMejor > 0) { inicio = tMejor; refV = posMejor; }
+            log.AppendLine($"Momento elegido: {inicio:0.00} s (en pantalla x={vpMejor.x:0.00}, y={vpMejor.y:0.00}; |x|,|y|<1 = dentro). Cae hacia la cámara en {posMejor}");
+        }
+        else log.AppendLine("No encontré la avioneta o su vuelo: explota a los " + MomentoIdeal + " s y cae hacia Memi.");
+        s_inicio = inicio; s_refVista = refV; s_enCiudad = true; s_explosion = true;
+        try { Selection.activeTransform = sel; Hornear(); }
+        finally { s_inicio = InicioEnTimeline; s_refVista = null; s_enCiudad = false; s_explosion = false; }
+        Debug.Log("[Derrumbe seleccionado]\n" + log);
+    }
+
+    static Bounds CajaMundo(MeshFilter mf)
+    {
+        var mb = mf.sharedMesh.bounds; var M = mf.transform.localToWorldMatrix;
+        var b = new Bounds(M.MultiplyPoint3x4(mb.center), Vector3.zero);
+        for (int i = 0; i < 8; i++)
+        {
+            var c = mb.center + Vector3.Scale(mb.extents, new Vector3((i & 1) == 0 ? -1 : 1, (i & 2) == 0 ? -1 : 1, (i & 4) == 0 ? -1 : 1));
+            b.Encapsulate(M.MultiplyPoint3x4(c));
+        }
+        return b;
+    }
+
+    // Explosión antes del derrumbe: tres estallidos de fuego por pisos, humo oscuro y brasas. Materiales del fuego del
+    // proyecto (shader propio Amistad/Fuego VFX). La dispara un Control Track en el Timeline de la ciudad.
+    static string CrearExplosion(List<Transform> todos, Transform raiz, Transform edificio, Material[] mats, float suelo)
+    {
+        var b = CajaMundo(edificio.GetComponent<MeshFilter>());
+        float R = Mathf.Max(b.size.x, b.size.z) * 0.5f, H = b.size.y;
+        var go = new GameObject("Explosion"); go.transform.SetParent(raiz, false);
+        go.transform.position = new Vector3(b.center.x, suelo, b.center.z);
+        var llamas = AssetDatabase.LoadAssetAtPath<Material>("Assets/Assets/shaders/FuegoVFX/Fuego_Llamas.mat");
+        var humo = AssetDatabase.LoadAssetAtPath<Material>("Assets/Assets/shaders/FuegoVFX/Fuego_Humo.mat");
+        var brasas = AssetDatabase.LoadAssetAtPath<Material>(RutaBrasas);
+        uint semilla = 7001;
+        string infoExp = ReutilizarExplosionGato(go.transform, b, R, H);
+        // humo oscuro que sube
+        var hu = Emisor(go.transform, "Humo_Explosion", go.transform.position + Vector3.up * H * 0.3f, humo, semilla++, 8f);
+        var mh = hu.main; mh.startDelay = 0.15f;
+        mh.startLifetime = new ParticleSystem.MinMaxCurve(4f, 7f);
+        mh.startSpeed = new ParticleSystem.MinMaxCurve(R * 0.2f, R * 0.7f);
+        mh.startSize = new ParticleSystem.MinMaxCurve(R * 0.9f, R * 1.5f);
+        mh.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+        mh.startColor = new ParticleSystem.MinMaxGradient(new Color(0.16f, 0.13f, 0.12f, 0.85f), new Color(0.3f, 0.26f, 0.22f, 0.7f));
+        var eh = hu.emission; eh.SetBursts(new[] { new ParticleSystem.Burst(0f, 35), new ParticleSystem.Burst(0.4f, 20) });
+        var sh2 = hu.shape; sh2.enabled = true; sh2.shapeType = ParticleSystemShapeType.Sphere; sh2.radius = R * 0.6f;
+        Velocidad(hu, -R * 0.05f, R * 0.05f, R * 0.1f, R * 0.25f, -R * 0.05f, R * 0.05f);
+        Frenar(hu, 1.2f);
+        Tamano(hu, new Keyframe(0f, 0.6f), new Keyframe(1f, 2.2f));
+        Alfa(hu, new GradientAlphaKey(0f, 0f), new GradientAlphaKey(0.85f, 0.12f), new GradientAlphaKey(0.6f, 0.6f), new GradientAlphaKey(0f, 1f));
+        hu.GetComponent<ParticleSystemRenderer>().maxParticleSize = 3f;
+        // brasas que salen volando y caen
+        var br = Emisor(go.transform, "Brasas_Explosion", go.transform.position + Vector3.up * H * 0.3f, brasas, semilla++, 4f);
+        var mb2 = br.main;
+        mb2.startLifetime = new ParticleSystem.MinMaxCurve(1.5f, 3.2f);
+        mb2.startSpeed = new ParticleSystem.MinMaxCurve(R * 1.2f, R * 3.5f);
+        mb2.startSize = new ParticleSystem.MinMaxCurve(R * 0.025f, R * 0.07f);
+        mb2.startColor = new ParticleSystem.MinMaxGradient(new Color(6f, 2.5f, 0.6f, 1f), new Color(4f, 1.2f, 0.3f, 1f));
+        mb2.gravityModifier = 8f;
+        var eb = br.emission; eb.SetBursts(new[] { new ParticleSystem.Burst(0f, 140), new ParticleSystem.Burst(0.3f, 60) });
+        var sh3 = br.shape; sh3.enabled = true; sh3.shapeType = ParticleSystemShapeType.Hemisphere; sh3.radius = R * 0.4f;
+        Alfa(br, new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 0.7f), new GradientAlphaKey(0f, 1f));
+        foreach (var ps in go.GetComponentsInChildren<ParticleSystem>(true)) { var mm = ps.main; mm.playOnAwake = true; }
+        go.SetActive(false);
+
+        // Control Track en el Timeline de la ciudad
+        var dir = todos.FirstOrDefault(t => t != null && t.name == "Director_P2_Ciudad")?.GetComponent<PlayableDirector>();
+        var tl = dir?.playableAsset as TimelineAsset;
+        if (tl == null) return "No encontré el Timeline de la ciudad para la explosión.";
+        string nombrePista = "Explosión " + raiz.name.Replace("DERRUMBE_", "");
+        foreach (var vieja in tl.GetOutputTracks().OfType<ControlTrack>().Where(t => t.name == nombrePista).ToList()) tl.DeleteTrack(vieja);
+        var pista = tl.CreateTrack<ControlTrack>(null, nombrePista);
+        var clip = pista.CreateClip<ControlPlayableAsset>();
+        clip.start = s_inicio - 17.5 - 0.3; clip.duration = 10; clip.displayName = "Explosión";
+        var cpa = (ControlPlayableAsset)clip.asset;
+        var er = cpa.sourceGameObject; er.exposedName = GUID.Generate().ToString(); er.defaultValue = null; cpa.sourceGameObject = er;
+        dir.SetReferenceValue(er.exposedName, go);
+        cpa.updateParticle = true; cpa.active = true; cpa.updateDirector = false; cpa.updateITimeControl = false; cpa.searchHierarchy = true;
+        cpa.postPlayback = ActivationControlPlayable.PostPlaybackState.Inactive;
+        EditorUtility.SetDirty(tl); EditorUtility.SetDirty(dir);
+        AssetDatabase.SaveAssets();
+        return infoExp + $"\nExplosión ({R:0} u de radio, {H:0} u de alto) en la pista '{nombrePista}', {s_inicio - 0.3:0.00} s del principal.";
+    }
+
+
+    // La misma "Explosión horizontal" del bosque (la que asusta al gato en la toma del título): se copia la instancia del
+    // prefab con todos sus cambios (sin loop, semilla fija, tamaños) y se escala al tamaño del edificio.
+    const string RutaExplosionGato = "Assets/Assets/shaders/Explosión horizontal.prefab";
+    const string RutaMatExplosion = "Assets/Assets/shaders/Materiales/Explosion.mat";
+    const string RutaMatExplosionCiudad = "Assets/Assets/shaders/Materiales/Explosion_Ciudad.mat";
+    const float FactorFuegoCiudad = 0.15f;
+    static string ReutilizarExplosionGato(Transform padre, Bounds b, float R, float H)
+    {
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(RutaExplosionGato);
+        if (prefab == null) return "No encontré " + RutaExplosionGato;
+        var bosque = SceneManager.GetActiveScene().GetRootGameObjects().FirstOrDefault(g => g.name == "BOSQUE");
+        var original = bosque == null ? null : bosque.GetComponentsInChildren<Transform>(true)
+            .Where(t => PrefabUtility.IsAnyPrefabInstanceRoot(t.gameObject) && PrefabUtility.GetCorrespondingObjectFromSource(t.gameObject) == prefab)
+            .Select(t => t.gameObject).FirstOrDefault();
+        var copia = (GameObject)PrefabUtility.InstantiatePrefab(prefab, padre);
+        if (original != null)
+        {
+            var mods = PrefabUtility.GetPropertyModifications(original);
+            if (mods != null) PrefabUtility.SetPropertyModifications(copia, mods);
+            copia.transform.SetParent(padre, true);
+        }
+        copia.name = "Explosion_Gato";
+        copia.SetActive(true);
+        Quaternion rotMundo = original != null ? original.transform.rotation : Quaternion.Euler(-90f, 0f, 0f);
+        Vector3 escalaMundo = original != null ? original.transform.lossyScale : Vector3.one * 27.5f;
+
+        // Mido qué tan grande se ve la explosión original simulándola 1.2 s, para escalarla al edificio.
+        copia.transform.SetPositionAndRotation(Vector3.zero, rotMundo);
+        PonerEscalaMundo(copia.transform, escalaMundo);
+        float ancho = MedirExplosion(copia);
+        float objetivo = R * 2.6f;
+        float k = ancho > 0.01f ? Mathf.Clamp(objetivo / ancho, 0.1f, 50f) : 4f;
+        copia.transform.SetPositionAndRotation(new Vector3(b.center.x, b.min.y + H * 0.3f, b.center.z), rotMundo);
+        PonerEscalaMundo(copia.transform, escalaMundo * k);
+        foreach (var ps in copia.GetComponentsInChildren<ParticleSystem>(true)) { var m = ps.main; m.playOnAwake = true; }
+        // Mismo material del gato pero con el color de fuego menos extremo: con el postpro de la ciudad (contraste y
+        // saturación altos) el naranja HDR de 63 se volvía cian. Se usa una copia para no tocar la toma del bosque.
+        var matGato = AssetDatabase.LoadAssetAtPath<Material>(RutaMatExplosion);
+        if (matGato != null)
+        {
+            var matCiudad = AssetDatabase.LoadAssetAtPath<Material>(RutaMatExplosionCiudad);
+            if (matCiudad == null) { matCiudad = new Material(matGato); AssetDatabase.CreateAsset(matCiudad, RutaMatExplosionCiudad); }
+            matCiudad.CopyPropertiesFromMaterial(matGato);
+            var c = matGato.GetColor("_FireColor");
+            matCiudad.SetColor("_FireColor", c * FactorFuegoCiudad);
+            EditorUtility.SetDirty(matCiudad);
+            foreach (var r in copia.GetComponentsInChildren<ParticleSystemRenderer>(true)) r.sharedMaterial = matCiudad;
+        }
+        return $"Explosión del gato reutilizada ({(original != null ? "copia de " + original.name + " del BOSQUE" : "prefab sin cambios")}): medía {ancho:0} u de ancho, escala x{k:0.00}.";
+    }
+
+    static void PonerEscalaMundo(Transform t, Vector3 escalaMundo)
+    {
+        var ps = t.parent != null ? t.parent.lossyScale : Vector3.one;
+        t.localScale = new Vector3(escalaMundo.x / ps.x, escalaMundo.y / ps.y, escalaMundo.z / ps.z);
+    }
+
+    static float MedirExplosion(GameObject go)
+    {
+        var padre = go.transform.parent; bool activoPadre = padre == null || padre.gameObject.activeSelf;
+        if (padre != null) padre.gameObject.SetActive(true);
+        float ancho = 0f;
+        try
+        {
+            foreach (var ps in go.GetComponentsInChildren<ParticleSystem>(true)) ps.Simulate(1.2f, false, true, false);
+            Bounds? bb = null;
+            foreach (var r in go.GetComponentsInChildren<ParticleSystemRenderer>(true))
+            {
+                var ps = r.GetComponent<ParticleSystem>(); if (ps == null || ps.particleCount == 0) continue;
+                if (bb == null) bb = r.bounds; else { var x = bb.Value; x.Encapsulate(r.bounds); bb = x; }
+            }
+            if (bb != null) ancho = Mathf.Max(bb.Value.size.x, bb.Value.size.z);
+            foreach (var ps in go.GetComponentsInChildren<ParticleSystem>(true)) { ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear); ps.Clear(true); }
+        }
+        finally { if (padre != null) padre.gameObject.SetActive(activoPadre); }
+        return ancho;
+    }
+
 }

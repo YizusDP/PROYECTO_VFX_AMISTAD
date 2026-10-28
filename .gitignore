@@ -48,3 +48,6 @@ crashlytics-build.properties
 # SO
 .DS_Store
 Thumbs.db
+# Escenas de recuperación de Unity
+Assets/_Recovery/
+Assets/_Recovery.meta

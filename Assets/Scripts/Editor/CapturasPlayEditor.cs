@@ -9,7 +9,7 @@ using UnityEngine.Playables;
 public static class CapturasPlayEditor
 {
     const string Clave = "Amistad_CapturasPlay";
-    static readonly double[] Tiempos = { 18.0, 19.0, 20.0, 21.0, 22.0, 22.9 };
+    static readonly double[] Tiempos = { 42.8, 43.1, 43.6, 44.1, 44.6, 45.1, 45.7, 46.2 };
     static int siguiente;
 
     static CapturasPlayEditor()
@@ -49,6 +49,33 @@ public static class CapturasPlayEditor
                 System.IO.File.AppendAllText("Logs/capturas_play/info.txt",
                     $"t={d.time:0.00} cam {cam.transform.position} fwd {cam.transform.forward} · Memi raiz {memi.transform.position} rotY {memi.transform.eulerAngles.y:0} · cuerpo mira {frente} · angulo cuerpo-vs-camara {Vector3.Angle(frente, haciaCam):0}°\n");
             }
+            if (memi != null)
+            {
+                var anM = memi.GetComponent<Animator>();
+                var rsM = memi.GetComponentsInChildren<Renderer>(true);
+                var bM = rsM.Length > 0 ? rsM[0].bounds : new Bounds();
+                foreach (var r in rsM) bM.Encapsulate(r.bounds);
+                var hipsM = anM != null && anM.isHuman ? anM.GetBoneTransform(HumanBodyBones.Hips) : null;
+                var velM = memi.GetComponent("VelocidadAnimator");
+                System.IO.File.AppendAllText("Logs/capturas_play/info.txt",
+                    $"   MEMI activa={memi.activeInHierarchy} escala {memi.transform.lossyScale} bounds {bM.center} tam {bM.size} visibles={rsM.Count(r => r.isVisible)}/{rsM.Length} hips {(hipsM ? hipsM.position.ToString() : "-")} animSpeed {(anM ? anM.speed : -1)} controller {(anM && anM.runtimeAnimatorController ? anM.runtimeAnimatorController.name : "-")} estado {(anM && anM.runtimeAnimatorController ? anM.GetCurrentAnimatorStateInfo(0).normalizedTime : -1):0.00}\n");
+            }
+            var gz = Resources.FindObjectsOfTypeAll<Transform>().FirstOrDefault(t => t.name == "GODZILLA" && t.gameObject.scene.IsValid());
+            if (gz != null)
+            {
+                var anG = gz.GetComponentInChildren<Animator>(true);
+                var cabeza = anG != null && anG.isHuman ? anG.GetBoneTransform(HumanBodyBones.Head) : null;
+                var rs = gz.GetComponentsInChildren<Renderer>(true);
+                var bnd = rs.Length > 0 ? rs[0].bounds : new Bounds(gz.position, Vector3.zero);
+                foreach (var r in rs) bnd.Encapsulate(r.bounds);
+                var camM = Camera.main;
+                var vp = camM != null ? camM.WorldToViewportPoint(bnd.center) : Vector3.zero;
+                System.IO.File.AppendAllText("Logs/capturas_play/info.txt",
+                    $"   GODZILLA activo={gz.gameObject.activeInHierarchy} pos {gz.position} escala {gz.lossyScale} cabeza {(cabeza ? cabeza.position.ToString() : "-")} bounds {bnd.center} tam {bnd.size} viewport {vp} renderers={rs.Length} visibles={rs.Count(r => r.isVisible)}\n");
+            }
+            var avi = Resources.FindObjectsOfTypeAll<Transform>().FirstOrDefault(t => t.name == "AVIONETA" && t.gameObject.scene.IsValid());
+            if (avi != null && Camera.main != null)
+                System.IO.File.AppendAllText("Logs/capturas_play/info.txt", $"   AVIONETA activa={avi.gameObject.activeInHierarchy} pos {avi.position} viewport {Camera.main.WorldToViewportPoint(avi.position)}\n");
             siguiente++;
         }
         else if (siguiente >= Tiempos.Length && d.time >= Tiempos[Tiempos.Length - 1] + 1.0)

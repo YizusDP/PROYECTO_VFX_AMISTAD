@@ -1,0 +1,6 @@
+Avioneta (Airplane.fbx, Airplane.prefab, Master mat, MasterTexture, Airplane propel.wav)
+Origen: Unity Asset Store, paquete "Simple Airplane Controller" de HeneGames.
+Licencia: Standard Unity Asset Store EULA.
+Se conservó solo el modelo de la avioneta (casco + hélice), su material, su textura y el sonido de la hélice.
+Se eliminó el resto del paquete (jet, avión grande, scripts de control, escenas de ejemplo, desierto, pista y Terrain).
+Modificaciones hechas para el proyecto: (pendiente: material/shader propio, animación, etc.)
