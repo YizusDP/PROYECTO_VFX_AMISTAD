@@ -1969,8 +1969,8 @@
     "m_ObjectId": "174361e8544a44369ef8e91eb17b41cb",
     "m_Title": "Ruido (dos octavas, distinto por particula)",
     "m_Position": {
-        "x": -2825.0,
-        "y": -709.0
+        "x": -2825.599853515625,
+        "y": -710.3999633789063
     }
 }
 
@@ -3085,8 +3085,8 @@
     "m_ObjectId": "3a91a93bc3e64700802397b9474249e9",
     "m_Title": "Depth Fade (no atraviesa letras)",
     "m_Position": {
-        "x": -525.0,
-        "y": 441.0
+        "x": -525.599853515625,
+        "y": 439.20001220703127
     }
 }
 
@@ -6258,8 +6258,8 @@
     "m_ObjectId": "96b38a2e236b46d6af9182032d45c4b6",
     "m_Title": "Alpha: densidad que se deshace con la edad",
     "m_Position": {
-        "x": -1305.0,
-        "y": 591.0
+        "x": -1305.599853515625,
+        "y": 589.6000366210938
     }
 }
 
@@ -8180,8 +8180,8 @@
     "m_ObjectId": "d1d5ac6cac534ed49e5fbc72211ed559",
     "m_Title": "Datos de la particula (UV0.xy = uv, z = random, w = edad)",
     "m_Position": {
-        "x": -3405.0,
-        "y": -709.0
+        "x": -3405.599853515625,
+        "y": -710.3999633789063
     }
 }
 
@@ -8928,8 +8928,8 @@
     "m_ObjectId": "dfc9ea75454b431a90a916ca75ce2f35",
     "m_Title": "Forma redonda",
     "m_Position": {
-        "x": -2605.0,
-        "y": 341.0
+        "x": -2605.599853515625,
+        "y": 339.20001220703127
     }
 }
 
@@ -9471,8 +9471,8 @@
     "m_ObjectId": "ee6d133df3f84b318e637fbe2acd07fd",
     "m_Title": "Color: particula x material x luz desde arriba",
     "m_Position": {
-        "x": -1305.0,
-        "y": -709.0
+        "x": -1305.599853515625,
+        "y": -710.3999633789063
     }
 }
 

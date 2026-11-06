@@ -1177,6 +1177,7 @@ public static class DerrumbeEditor
             matCiudad.CopyPropertiesFromMaterial(matGato);
             var c = matGato.GetColor("_FireColor");
             matCiudad.SetColor("_FireColor", c * FactorFuegoCiudad);
+            FuegoToonEditor.HacerTransparente(matCiudad, FuegoToonEditor.OpacidadExplosion);   // deja ver los edificios
             EditorUtility.SetDirty(matCiudad);
             foreach (var r in copia.GetComponentsInChildren<ParticleSystemRenderer>(true)) r.sharedMaterial = matCiudad;
         }

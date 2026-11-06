@@ -32,9 +32,12 @@ public static class GokuVueloEditor
     const float Junto = 34.6f;              // ya va volando a la par
     const float PowerUp = 35.0f;            // empieza el power up (sin dejar de avanzar)
     const double Swap = 118.0 / 30.0, LargoPowerUp = 6.0;
-    const float Mezcla = 0.6f;              // blend entre vuelo y power up
-    const float Despega = 41.0f;            // sale disparado
-    const float SubeAlIrse = 110f;          // u que sube mientras se aleja
+    const float Mezcla = 1.0f;              // blend entre vuelo y power up (se endereza con calma)
+    const float Agacha = 2.5f;              // u que se hunde justo antes de despegar (impulso)
+    const float Despega = 41.8f;            // sale disparado (después del saludo y del impulso con las rodillas)
+    const float SaludoIni = 40.2f;          // voltea a la cámara y se lleva dos dedos a la frente; lo lanza en SaludoIni + 1.1
+    const float MezclaSaludo = 0.3f;
+    const float SubeAlIrse = 0f;            // la salida es en línea recta (ver Calc); antes subía 150 u en curva
     const float BlendSigue = 0.4f;          // la vista del piloto pasa a seguir a Goku (solo rota)
 
     // Dónde va Goku respecto a la VISTA DEL PILOTO: en la dirección a la que voltea la cámara (GiroGrados), a 'Distancia' u,
@@ -46,6 +49,13 @@ public static class GokuVueloEditor
 
     static TC Comp<TC>(GameObject go) where TC : Component { var c = go.GetComponent<TC>(); return c != null ? c : Undo.AddComponent<TC>(go); }
     static AnimationClip ClipDe(string fbx) => AssetDatabase.LoadAllAssetsAtPath(fbx).OfType<AnimationClip>().FirstOrDefault(c => !c.name.StartsWith("__preview__"));
+
+    /// 0 -> 1 -> 0 alrededor del despegue: pico 0.15 s antes de Despega
+    static float Hundida(float t)
+    {
+        float k = Mathf.InverseLerp(Despega - 0.4f, Despega + 0.1f, t);
+        return k <= 0f || k >= 1f ? 0f : Mathf.Sin(k * Mathf.PI);
+    }
 
     [MenuItem("Tools/Amistad/CM4: primera persona en la avioneta + Goku SSJ")]
     static void Aplicar()
@@ -69,7 +79,12 @@ public static class GokuVueloEditor
         }
         mi.clipAnimations = cl;
         mi.SaveAndReimport();
-        var clipVuelo = ClipDe(FbxVuelo);
+        // Clips corregidos (pies derechos; despegue sin el brazo que subía como saludo): GokuVueloFixEditor
+        GokuVueloFixEditor.Corregir();
+        var clipVuelo = AssetDatabase.LoadAssetAtPath<AnimationClip>(GokuVueloFixEditor.RutaVueloFix) ?? ClipDe(FbxVuelo);
+        var clipDespegue = AssetDatabase.LoadAssetAtPath<AnimationClip>(GokuVueloFixEditor.RutaDespedida)
+                           ?? AssetDatabase.LoadAssetAtPath<AnimationClip>(GokuVueloFixEditor.RutaDespegue) ?? clipVuelo;
+        var clipSaludo = AssetDatabase.LoadAssetAtPath<AnimationClip>(GokuVueloFixEditor.RutaSaludo);
         var clipBase = ClipDe(Carpeta + "goku_base_powerup.fbx"); var clipSSJ = ClipDe(Carpeta + "goku_ssj_powerup.fbx");
         var clipAv = AssetDatabase.LoadAssetAtPath<AnimationClip>(ClipAvionetaPath);
 
@@ -108,21 +123,46 @@ public static class GokuVueloEditor
         var cx = new AnimationCurve(); var cy = new AnimationCurve(); var cz = new AnimationCurve();
         var qx = new AnimationCurve(); var qy = new AnimationCurve(); var qz = new AnimationCurve(); var qw = new AnimationCurve();
         Quaternion previo = Quaternion.identity;
-        for (float t = Inicio; t <= t1 + 1e-4f; t += dt)
+        // Posición de Goku en el tiempo t (mundo) hasta el despegue (vuela pegado a la avioneta).
+        (Vector3 pos, Vector3 f, Vector3 izq, float mira, float sale) CalcBase(float t)
         {
             var f = Rumbo(t); var izq = Vector3.Cross(f, Vector3.up).normalized;   // izquierda del rumbo
             float llega = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(Inicio, Junto, t));
-            float sale = Mathf.Pow(Mathf.InverseLerp(Despega, Fin, t), 2.2f);
+            float u = Mathf.InverseLerp(Despega, Fin, t);
+            float sale = Mathf.Pow(u, 2.8f);                       // hacia adelante: acelera
+            float subeSale = Mathf.Pow(u, 1.9f);                   // hacia arriba: sube antes de acelerar al frente -> curva
             float mira = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(PowerUp, PowerUp + Mezcla, t)) * (1f - Mathf.SmoothStep(0, 1, Mathf.InverseLerp(Despega - Mezcla, Despega, t)));
             float centro = Mathf.Lerp(CentroVolando, CentroDePie, mira);
             float adelante = Mathf.Lerp(-AtrasAlInicio, camAdelante, llega) + sale * AdelanteAlFinal;
             float arriba = Mathf.Lerp(-AbajoAlInicio, camLocal.y - centro - BajoCamara, llega) + 1.2f * Mathf.Sin(t * 2.4f)
-                           + sale * SubeAlIrse;     // se va subiendo: queda contra el cielo, arriba del ala
-            var pos = PA(t) + f * adelante + izq * camIzq + Vector3.up * arriba;
+                           + subeSale * SubeAlIrse                 // se va subiendo: queda contra el cielo, arriba del ala
+                           - Agacha * Hundida(t);                  // se hunde un poco antes de salir disparado
+            return (PA(t) + f * adelante + izq * camIzq + Vector3.up * arriba, f, izq, mira, sale);
+        }
+        // Al irse sale en LÍNEA RECTA hacia adelante: desde donde estaba al despegar, en la dirección de la avioneta en ese
+        // instante, con una pendiente leve hacia arriba (Inclinacion). Arranca a la velocidad de la avioneta y acelera (AdelanteAlFinal extra en Despega..Fin).
+        var salida0 = CalcBase(Despega);
+        const float Inclinacion = 0.22f;        // la línea sube un poco (pendiente) para pasar por encima del ala, no detrás
+        var rumbo0 = (Rumbo(Despega) + Vector3.up * Inclinacion).normalized;
+        float vAvioneta = (PA(Despega + 0.05f) - PA(Despega - 0.05f)).magnitude / 0.1f;
+        (Vector3 pos, Vector3 f, Vector3 izq, float mira, float sale) Calc(float t)
+        {
+            if (t <= Despega) return CalcBase(t);
+            float dtS = t - Despega;
+            float sale = Mathf.Pow(dtS / (Fin - Despega), 2.8f);
+            return (salida0.pos + rumbo0 * (vAvioneta * dtS + sale * AdelanteAlFinal), rumbo0, salida0.izq, 0f, Mathf.Min(sale, 1f));
+        }
+        for (float t = Inicio; t <= t1 + 1e-4f; t += dt)
+        {
+            var (pos, f, izq, mira, sale) = Calc(t);
             // vuela hacia adelante girado un poco hacia la avioneta; en el power up la voltea a ver de frente
             var camMundo = PA(t) + f * camLocal.z - izq * camLocal.x + Vector3.up * camLocal.y;
             var haciaCam = camMundo - pos; haciaCam.y = 0;
             var q = Quaternion.Slerp(Quaternion.LookRotation(f, Vector3.up), Quaternion.LookRotation(haciaCam.normalized, Vector3.up), Mathf.Lerp(VolteaVolando, 0.85f, mira) * (1f - sale));
+            // Al irse, el cuerpo apunta hacia donde va (incluye la subida): va inclinado siguiendo la curva
+            var vel = Calc(t + 0.05f).pos - Calc(t - 0.05f).pos;
+            float wSalida = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(Despega - 0.1f, Despega + 0.35f, t));
+            if (wSalida > 0f && vel.sqrMagnitude > 1e-4f) q = Quaternion.Slerp(q, Quaternion.LookRotation(vel.normalized, Vector3.up), wSalida);
             if (Quaternion.Dot(q, previo) < 0) q = new Quaternion(-q.x, -q.y, -q.z, -q.w);
             previo = q;
             float lt = t - Inicio;
@@ -148,7 +188,13 @@ public static class GokuVueloEditor
         }
         double L(double tp) => tp - InicioCiudad;
         TimelineClip Clip(AnimationTrack p, AnimationClip c, double ini, double fin, string nombre)
-        { var tc = p.CreateClip(c); tc.start = L(ini); tc.duration = fin - ini; tc.displayName = nombre; return tc; }
+        {
+            var tc = p.CreateClip(c); tc.start = L(ini); tc.duration = fin - ini; tc.displayName = nombre;
+            tc.mixInCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);    // mezclas con aceleración y frenado, no lineales
+            tc.mixOutCurve = AnimationCurve.EaseInOut(0f, 1f, 1f, 0f);
+            ((AnimationPlayableAsset)tc.asset).applyFootIK = false;   // el IK de pies volvía a torcerlos
+            return tc;
+        }
 
         var pV = (AnimationTrack)Pista<AnimationTrack>("Goku · vuelo");
         pV.trackOffset = TrackOffset.ApplyTransformOffsets; pV.position = Vector3.zero; pV.rotation = Quaternion.identity;
@@ -165,8 +211,11 @@ public static class GokuVueloEditor
         vB.postPlaybackState = ActivationTrack.PostPlaybackState.Inactive; dirC.SetGenericBinding(vB, gBase.gameObject);
 
         var pS = (AnimationTrack)Pista<AnimationTrack>("Goku SSJ · animación"); pS.trackOffset = TrackOffset.ApplySceneOffsets;
-        Clip(pS, clipSSJ, PowerUp, PowerUp + LargoPowerUp, "Power up SSJ");
-        Clip(pS, clipVuelo, Despega - Mezcla, t1, "Vuelo SSJ");                    // se encima con el power up: blend
+        // Power up -> saludo de dos dedos a la cámara -> lo lanza -> se va volando despidiéndose con la mano
+        Clip(pS, clipSSJ, PowerUp, SaludoIni + MezclaSaludo, "Power up SSJ");
+        if (clipSaludo != null) Clip(pS, clipSaludo, SaludoIni, SaludoIni + GokuVueloFixEditor.LargoSaludo, "Saludo");
+        var clipSalida = AssetDatabase.LoadAssetAtPath<AnimationClip>(GokuVueloFixEditor.RutaVueloSalida) ?? clipVuelo;
+        Clip(pS, clipSalida, Despega - MezclaSaludo, t1, "Vuelo SSJ (se va)");   // vuelo corregido con una rodilla doblada
         dirC.SetGenericBinding(pS, gSSJ.GetComponent<Animator>());
         var vS = (ActivationTrack)Pista<ActivationTrack>("Goku SSJ · visible");
         var cvs = vS.CreateDefaultClip(); cvs.start = L(PowerUp + Swap); cvs.duration = t1 - (PowerUp + Swap); cvs.displayName = "SSJ";
@@ -176,7 +225,7 @@ public static class GokuVueloEditor
             var an = g.GetComponent<Animator>(); Undo.RecordObject(an, "CM4"); an.cullingMode = AnimatorCullingMode.AlwaysAnimate;
             Undo.RecordObject(g.gameObject, "CM4"); g.gameObject.SetActive(false);
         }
-        log.AppendLine($"Goku: llega {Inicio}-{Junto}, power up {PowerUp}-{PowerUp + LargoPowerUp} (SSJ en {PowerUp + Swap:F2}), despega {Despega}-{Fin}");
+        log.AppendLine($"Goku: llega {Inicio}-{Junto}, power up {PowerUp}-{SaludoIni} (SSJ en {PowerUp + Swap:F2}), saludo {SaludoIni}-{SaludoIni + 1.1f:0.0}, despega {Despega}-{Fin}");
 
         // ---------- 4. Cámara del piloto ----------
         var cam = T("CM4_PrimeraPersona");

@@ -9,7 +9,7 @@ using UnityEngine.Playables;
 public static class CapturasPlayEditor
 {
     const string Clave = "Amistad_CapturasPlay";
-    static readonly double[] Tiempos = { 42.8, 43.1, 43.6, 44.1, 44.6, 45.1, 45.7, 46.2 };
+    static readonly double[] Tiempos = { 41.6, 41.9, 42.1, 42.3, 42.5, 42.8 };
     static int siguiente;
 
     static CapturasPlayEditor()
@@ -76,6 +76,13 @@ public static class CapturasPlayEditor
             var avi = Resources.FindObjectsOfTypeAll<Transform>().FirstOrDefault(t => t.name == "AVIONETA" && t.gameObject.scene.IsValid());
             if (avi != null && Camera.main != null)
                 System.IO.File.AppendAllText("Logs/capturas_play/info.txt", $"   AVIONETA activa={avi.gameObject.activeInHierarchy} pos {avi.position} viewport {Camera.main.WorldToViewportPoint(avi.position)}\n");
+            var kitty = Resources.FindObjectsOfTypeAll<Transform>().FirstOrDefault(t => t.name == "GATO_KITTY" && t.gameObject.scene.IsValid());
+            if (kitty != null && Camera.main != null)
+            {
+                var rk = kitty.GetComponentInChildren<SkinnedMeshRenderer>(true);
+                System.IO.File.AppendAllText("Logs/capturas_play/info.txt",
+                    $"   KITTY activo={kitty.gameObject.activeInHierarchy} pos {kitty.position} fwd {kitty.forward} bounds {(rk ? rk.bounds.center.ToString() : "-")} tam {(rk ? rk.bounds.size.ToString() : "-")} viewport {Camera.main.WorldToViewportPoint(rk ? rk.bounds.center : kitty.position)} visible={(rk && rk.isVisible)}\n");
+            }
             siguiente++;
         }
         else if (siguiente >= Tiempos.Length && d.time >= Tiempos[Tiempos.Length - 1] + 1.0)

@@ -24,6 +24,14 @@ Shader "Amistad/Fuego VFX"
         _Erosion ("Erosión con la edad", Range(0, 1.5)) = 0.85
         _SuavidadSuelo ("Fundido con la geometría (unidades)", Float) = 15
         _FuerzaCalor ("Fuerza de la distorsión de calor", Range(0, 0.1)) = 0.02
+        [Header(Estilo caricatura (solo modo Fuego))]
+        _Toon ("Caricatura (0 = realista, 1 = toon)", Range(0, 1)) = 0
+        _Umbral ("Silueta: umbral", Range(0.02, 0.6)) = 0.16
+        _Borde ("Grosor de la orilla oscura", Range(0, 0.3)) = 0.08
+        [HDR] _ColorBorde ("Color de la orilla", Color) = (0.06, 0.012, 0, 1)
+        _CorteMedio ("Banda media desde", Range(0, 1)) = 0.42
+        _CortePunta ("Banda punta desde", Range(0, 1)) = 0.72
+        _Cubre ("Cuánto tapa el interior (0 = aditivo)", Range(0, 1)) = 0.3
         [HideInInspector] _SrcBlend ("_SrcBlend", Float) = 1
         [HideInInspector] _DstBlend ("_DstBlend", Float) = 1
     }
@@ -73,6 +81,13 @@ Shader "Amistad/Fuego VFX"
                 float _Erosion;
                 float _SuavidadSuelo;
                 float _FuerzaCalor;
+                float _Toon;
+                float _Umbral;
+                float _Borde;
+                half4 _ColorBorde;
+                float _CorteMedio;
+                float _CortePunta;
+                float _Cubre;
                 float _SrcBlend;
                 float _DstBlend;
             CBUFFER_END
@@ -184,9 +199,26 @@ Shader "Amistad/Fuego VFX"
                 // Rampa de color de "cuerpo negro": rojo -> naranja -> amarillo blanco
                 half3 c = lerp(_ColorBase.rgb, _ColorMedio.rgb, smoothstep(0.05, 0.45, fuego));
                 c = lerp(c, _ColorPunta.rgb, smoothstep(0.6, 1.0, fuego));
-                float a = fuego * i.color.a * suave;
-                c *= i.color.rgb * _Intensidad * a;
-                return half4(c, a);
+
+                // Estilo caricatura sobre la MISMA llama (mismos colores, ruido y erosión):
+                //   silueta de corte nítido, color en 3 bandas planas y una orilla oscura como la de la explosión.
+                // Para lo toon se usa solo el ruido grande (n1): el fino (n2) cruza el umbral muchas veces y la orilla
+                // saldría como puntitos sueltos. Así quedan lenguas limpias con una orilla continua.
+                float fuegoT = saturate((forma * (0.45 + n1) - edad * _Erosion) * 3.0);
+                float dentro = smoothstep(_Umbral, _Umbral + 0.025, fuegoT);
+                float orilla = dentro * (1.0 - smoothstep(_Umbral + _Borde, _Umbral + _Borde + 0.025, fuegoT));
+                half3 cT = lerp(_ColorBase.rgb, _ColorMedio.rgb, step(_CorteMedio, fuegoT));
+                cT = lerp(cT, _ColorPunta.rgb, step(_CortePunta, fuegoT));
+                cT = lerp(cT, _ColorBorde.rgb, orilla);
+
+                half3 col = lerp(c, cT, _Toon);
+                float cubierta = lerp(fuego, dentro, _Toon);
+                float a = cubierta * i.color.a * suave;
+                col *= i.color.rgb * _Intensidad * a;
+                // Alpha para mezcla premultiplicada (Blend One OneMinusSrcAlpha): el interior tapa poco (sigue
+                // transparente y brillante como el aditivo) y la orilla sí oscurece. Con Blend One One se ignora.
+                float tapa = lerp(_Cubre, 0.9, orilla);
+                return half4(col, a * lerp(1.0, tapa, _Toon));
             }
             ENDHLSL
         }

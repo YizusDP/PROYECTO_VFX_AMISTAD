@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Aura_Fuego_Ki
+  m_Shader: {fileID: 4800000, guid: d0f99ac8d90427740a7dbf45db3eedd4, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _Ruido:
+        m_Texture: {fileID: 2800000, guid: da28f90f41d2451ca06ffa5ee076feb2, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _Ancho: 0.32
+    - _Borde: 0.07
+    - _CorteMedio: 0.42
+    - _CortePunta: 0.72
+    - _Cubre: 0
+    - _Distorsion: 0.12
+    - _DstBlend: 10
+    - _Erosion: 0.7
+    - _EscalaRuido: 1
+    - _FuerzaCalor: 0.02
+    - _Intensidad: 0.6
+    - _Modo: 0
+    - _SrcBlend: 1
+    - _SuavidadSuelo: 9
+    - _Toon: 1
+    - _Umbral: 0.16
+    - _Velocidad: 1.8
+    m_Colors:
+    - _ColorBase: {r: 0.25, g: 0.55, b: 2.2, a: 1}
+    - _ColorBorde: {r: 0.12, g: 0.3, b: 1.4, a: 1}
+    - _ColorMedio: {r: 0.8, g: 1.3, b: 3.2, a: 1}
+    - _ColorPunta: {r: 2.6, g: 3, b: 3.6, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

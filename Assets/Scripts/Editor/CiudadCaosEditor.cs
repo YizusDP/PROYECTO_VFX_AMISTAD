@@ -26,7 +26,7 @@ public static class CiudadCaosEditor
 {
     const string NombreRaiz = "CAOS_CIUDAD";
     const string Carpeta = "Assets/Assets/shaders/Caos";
-    const string RutaFuego = "Assets/Assets/shaders/FuegoVFX/Fuego_VFX.prefab";
+    const string RutaFuego = "Assets/Assets/shaders/FuegoVFX/Fuego_Toon.prefab";   // estilo caricatura (FuegoToonEditor); antes Fuego_VFX.prefab
     const string RutaHumo = "Assets/Assets/shaders/FuegoVFX/Fuego_Humo.mat";
     const string RutaRuido = "Assets/Assets/shaders/TexturaS/Ruido_Fuego.png";
     const string TimelineCiudad = "Assets/Animaciones/Director_P2_CiudadTimeline.playable";
