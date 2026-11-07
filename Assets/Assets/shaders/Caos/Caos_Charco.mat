@@ -23,6 +23,10 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 2800000, guid: 156be976139e15547aa362cd63432262, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _Ruido:
         m_Texture: {fileID: 2800000, guid: da28f90f41d2451ca06ffa5ee076feb2, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -34,6 +38,7 @@ Material:
     - _Ondas: 3
     - _Pulso: 0.8
     m_Colors:
+    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _ColorBorde: {r: 1.6, g: 7, b: 0.9, a: 1}
     - _ColorCentro: {r: 0.45, g: 3.2, b: 0.35, a: 1}
   m_BuildTextureStacks: []
