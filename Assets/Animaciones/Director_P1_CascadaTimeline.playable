@@ -72,6 +72,22 @@ MonoBehaviour:
   VirtualCamera:
     exposedName: 03c62e2113ded354e91ad5c91481374f
     defaultValue: {fileID: 0}
+--- !u!114 &-7846136620511480902
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90fb794a295e73545af71bcdb7375791, type: 3}
+  m_Name: CinemachineShot
+  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineShot
+  DisplayName: 
+  VirtualCamera:
+    exposedName: df4924bc33a6452459a7a01e0c7dbd0f
+    defaultValue: {fileID: 0}
 --- !u!114 &-7448366359629850682
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -575,22 +591,6 @@ MonoBehaviour:
   VirtualCamera:
     exposedName: 52d1d6e888af378408d47da451ac4ac5
     defaultValue: {fileID: 0}
---- !u!114 &3376313774423142806
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 90fb794a295e73545af71bcdb7375791, type: 3}
-  m_Name: CinemachineShot
-  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineShot
-  DisplayName: 
-  VirtualCamera:
-    exposedName: 832a3bace3c1ea84ebe3358d34a48d4e
-    defaultValue: {fileID: 0}
 --- !u!114 &3606089753007481605
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -664,7 +664,7 @@ MonoBehaviour:
     m_Start: 17.5
     m_ClipIn: 0
     m_Asset: {fileID: -8545432017433928017}
-    m_Duration: 55.400000000000006
+    m_Duration: 55.400001525878906
     m_TimeScale: 1
     m_ParentTrack: {fileID: 4699069314927030035}
     m_EaseInDuration: 0
@@ -2129,7 +2129,7 @@ MonoBehaviour:
   - m_Version: 1
     m_Start: 67.5
     m_ClipIn: 0
-    m_Asset: {fileID: 3376313774423142806}
+    m_Asset: {fileID: -7846136620511480902}
     m_Duration: 5.400001525878906
     m_TimeScale: 1
     m_ParentTrack: {fileID: 7888191968777041534}
@@ -2139,7 +2139,25 @@ MonoBehaviour:
     m_BlendOutDuration: -1
     m_MixInCurve:
       serializedVersion: 2
-      m_Curve: []
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4

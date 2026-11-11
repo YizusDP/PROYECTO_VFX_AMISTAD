@@ -248,7 +248,9 @@ public static class SaludoEpicoEditor
         Control(tlC, dirC, grupoC, "Saludo · onda", onda.gameObject, 1.0, hitLocal);
 
         var estallido = Raiz("SALUDO_ESTALLIDO", raiz); estallido.position = U(lay.burst[0], lay.burst[1], lay.burst[2]);
-        Estallido(estallido.gameObject, matBrillo, s);
+        // resplandor de fondo (rosa) de los primeros planos: con soft particles, para que no se vea su orilla dura
+        // donde atraviesa el piso en el plano abierto (copia del material: el original lo usan otros efectos)
+        Estallido(estallido.gameObject, NuclearDetalleEditor.MaterialSuave(matBrillo, 25f), s);
         var rimA = Raiz("SALUDO_CONTRALUZ_ALE", raiz); var rimM = Raiz("SALUDO_CONTRALUZ_MEMI", raiz);
         Contraluz(rimA, U(-0.3f, 2.2f, 1.7f), U(pjA.place[0], 0, 1.1f), K);
         Contraluz(rimM, U(0.3f, 2.2f, 1.7f), U(pjM.place[0], 0, 1.1f), K);

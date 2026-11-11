@@ -41,13 +41,13 @@ public static class FinalTituloEditor
     const float FundidoEntra = 1.2f, FundidoSale = 0.8f, Acercamiento = 0.12f;   // acercamiento: 12% de la distancia
 
     // cámara que se aleja: cuántas veces su distancia inicial y cuánto sube (u)
-    const float VecesDistancia = 5f, SubeAlFinal = 12f, FovAlejar = 50f;
+    const float VecesDistancia = 5f, SubeAlFinal = 12f, FovAlejar = 45f;   // antes 50
     // cámara FIJA (sin movimiento ni temblor): plano abierto con ellos en la ciudad y espacio arriba para el hongo
-    const float DistanciaFija = 7f, SubeFija = 20f, MiraFija = 40f;   // veces la distancia del previz, altura y punto de mira (u)
+    const float DistanciaFija = 4f, SubeFija = 12f, MiraFija = 12f;   // veces la distancia del previz, altura y punto de mira (u). Antes 7 / 20 / 40 (se veían muy chiquitos)
     const float InclinacionFinal = 0.3f;              // al final la cámara queda casi horizontal (descubre la ciudad), no en picada
     const float MiraArribaFinal = 14f;                // y mira un poco por encima del agarre (cielo y edificios en llamas)
     // explosión: detrás de ellos (vista desde la cámara), en el piso
-    const float ExplosionDetras = 10f;   // explosión nuclear: bola de fuego + onda + hongo + destello
+    const float ExplosionDetras = 0f;    // explosión nuclear justo debajo de sus manos: nace de la bola de energía (antes 10 u detrás)
 
     static readonly string Pt = " · ";
     public const string CarpetaSaludoFinal = "Ciudad · saludo y final";   // carpeta de la jerarquía (si existe)

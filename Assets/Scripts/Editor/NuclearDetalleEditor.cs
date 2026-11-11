@@ -7,6 +7,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
+using UnityEngine.Animations;
 
 /// <summary>
 /// Tools > Amistad > 3 · Encuentro, saludo y final > Solo: detalle de la explosión nuclear (humo que los traga + temblor)
@@ -40,6 +41,22 @@ public static class NuclearDetalleEditor
         (2.6f, 18f), (3.0f, 20f), (3.2f, 0f), (4.1f, 0f)      // retumbe hasta el negro (66.4 = 3.0 s)
     };
 
+    // retumbe que crece mientras la bola de energía crece (antes de la detonación; CM8_9_FINAL empieza 1.4 s antes)
+    const float PreCarga = 1.4f;
+    static readonly (float t, float v)[] TemblorCarga = { (0f, 0f), (0.5f, 1f), (1.0f, 3f), (1.38f, 7f) };
+
+    // ---------- bola de energía entre las manos (nace en el primer plano CM8_8 y crece hasta la detonación)
+    const float IniEnergia = 61.0f;                  // principal
+    const float AlturaEnergia = 0.55f;               // u sobre el punto medio de las palmas
+    const string RutaClipEnergia = "Assets/Animaciones/Saludo/Final_EnergiaManos.anim";
+    const string RutaMatNucleo = "Assets/Animaciones/Saludo/Final_EnergiaNucleo.mat";
+    const string PistaEnergia = "Final \u00B7 energ\u00EDa manos";
+    const string PistaEnergiaCrece = "Final \u00B7 energ\u00EDa crece";
+    // diámetro (u) desde IniEnergia: chispa en el primer plano -> los envuelve al detonar (crece cada vez más rápido)
+    static readonly (float t, float v)[] Diametro =
+    { (0f, 0f), (0.1f, 0.12f), (0.4f, 0.4f), (1.0f, 0.95f), (1.4f, 2.4f), (1.8f, 5.5f), (2.1f, 9.5f), (2.3f, 14f), (2.45f, 20f) };
+    static readonly (float t, float v)[] LuzEnergia = { (0f, 0f), (0.3f, 4f), (1.0f, 8f), (1.8f, 20f), (2.45f, 70f) };
+
     const float FrecuenciaTemblor = 0.55f;   // < 1 = sacudidas más lentas y amplias (el 6D Shake a 1 es vibración fina)
 
     [MenuItem("Tools/Amistad/3 · Encuentro, saludo y final/Solo: detalle de la explosión nuclear (humo y temblor)")]
@@ -65,7 +82,7 @@ public static class NuclearDetalleEditor
     {
         // limpia lo anterior
         foreach (Transform h in nuc.Cast<Transform>().Where(x => x.name.StartsWith("DET_")).ToList()) Undo.DestroyObjectImmediate(h.gameObject);
-        foreach (var vieja in tlC.GetOutputTracks().Where(x => x.name == PistaDetalle || x.name == PistaTemblor).ToList()) tlC.DeleteTrack(vieja);
+        foreach (var vieja in tlC.GetOutputTracks().Where(x => x.name == PistaDetalle || x.name == PistaTemblor || x.name == PistaEnergia || x.name == PistaEnergiaCrece).ToList()) tlC.DeleteTrack(vieja);
 
         var cam = Buscar("CM8_9_FINAL");
         var haciaCam = Vector3.right;
@@ -102,16 +119,141 @@ public static class NuclearDetalleEditor
             perlin.AmplitudeGain = 0f; perlin.FrequencyGain = FrecuenciaTemblor;
             EditorUtility.SetDirty(perlin);
             var an = cam.GetComponent<Animator>();
-            var clip = Clip($"{Carpeta}/Final_Temblor.anim", typeof(CinemachineBasicMultiChannelPerlin), "AmplitudeGain", Temblor);
+            var llaves = TemblorCarga.Concat(Temblor.Skip(1).Select(k => (k.t + PreCarga, k.v))).ToArray();
+            var clip = Clip($"{Carpeta}/Final_Temblor.anim", typeof(CinemachineBasicMultiChannelPerlin), "AmplitudeGain", llaves);
             var pt = tlC.CreateTrack<AnimationTrack>(grupoC, PistaTemblor);
-            var tca = pt.CreateClip(clip); tca.start = ini; tca.duration = dur; tca.displayName = "Final_Temblor";
+            var tca = pt.CreateClip(clip); tca.start = ini - PreCarga; tca.duration = dur + PreCarga; tca.displayName = "Final_Temblor";
             if (tca.asset is AnimationPlayableAsset ap) ap.removeStartOffset = false;
             pt.trackOffset = TrackOffset.ApplySceneOffsets;
             dirC.SetGenericBinding(pt, an);
             EditorUtility.SetDirty(pt);
-            log.AppendLine("Temblor en CM8_9_FINAL (6D Shake): golpe de 48 en la detonación, 42 cuando llega la onda (+1.4 s), retumbe hasta el negro.");
+            log.AppendLine("Temblor en CM8_9_FINAL (6D Shake): retumbe que crece con la bola de energía (hasta 7), golpe de 48 en la detonación, 42 cuando llega la onda (+1.4 s), retumbe hasta el negro.");
         }
         else log.AppendLine("No encontré CM8_9_FINAL: sin temblor.");
+
+        Energia(nuc, tlC, dirC, grupoC, log);
+    }
+
+    // bola de energía entre las palmas: sigue el punto medio de los dos PALMA_GUIA (PositionConstraint), crece con una
+    // animación de escala y luz, y se apaga justo en la detonación (el destello blanco tapa el cambio)
+    static void Energia(Transform nuc, TimelineAsset tlC, PlayableDirector dirC, TrackAsset grupoC, StringBuilder log)
+    {
+        var padre = nuc.parent;
+        var vieja = padre.Find("FINAL_ENERGIA"); if (vieja != null) Undo.DestroyObjectImmediate(vieja.gameObject);
+        var guias = Resources.FindObjectsOfTypeAll<Transform>().Where(t => t.name == "PALMA_GUIA" && t.gameObject.scene.IsValid()).ToList();
+        if (guias.Count < 2) { log.AppendLine("Energía: faltan los PALMA_GUIA de las dos manos (corre 'Solo: media cara de Ale + tomas de las manos')."); return; }
+        var estallido = Mat(Carpeta + "/Saludo_Estallido.mat");
+        var brasas = Mat("Assets/Assets/shaders/FuegoVFX/Fuego_Brasas.mat");
+
+        var raiz = new GameObject("FINAL_ENERGIA"); Undo.RegisterCreatedObjectUndo(raiz, "Energía");
+        raiz.transform.SetParent(padre, false);
+        raiz.transform.position = (guias[0].position + guias[1].position) * 0.5f;
+        raiz.transform.localScale = Vector3.one * 0.01f;
+        var pc = raiz.AddComponent<PositionConstraint>();
+        foreach (var g in guias.Take(2)) pc.AddSource(new ConstraintSource { sourceTransform = g, weight = 0.5f });
+        pc.translationOffset = Vector3.up * AlturaEnergia;   // un poco arriba del agarre: los dedos no la tapan en el primer plano
+        pc.constraintActive = true; pc.locked = true;
+        var an = raiz.AddComponent<Animator>(); an.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+
+        // núcleo: esfera de luz HDR (el Bloom la hace brillar)
+        var mat = Mat(RutaMatNucleo);
+        if (mat == null)
+        {
+            mat = new Material(Shader.Find("Universal Render Pipeline/Unlit")) { name = "Final_EnergiaNucleo" };
+            mat.SetColor("_BaseColor", new Color(6f, 4.2f, 2.2f, 1f));
+            AssetDatabase.CreateAsset(mat, RutaMatNucleo);
+        }
+        var nucleo = GameObject.CreatePrimitive(PrimitiveType.Sphere); nucleo.name = "NUCLEO";
+        Object.DestroyImmediate(nucleo.GetComponent<Collider>());
+        nucleo.transform.SetParent(raiz.transform, false);
+        var mr = nucleo.GetComponent<MeshRenderer>(); mr.sharedMaterial = mat;
+        mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; mr.receiveShadows = false;
+
+        var lista = new List<GameObject>();
+        // halo que parpadea
+        {
+            var ps = Sistema(raiz.transform, "HALO", MaterialSuave(estallido, 8f, "_SuaveHalo"));   // soft: no corta en seco contra el piso
+            var m = ps.main; m.loop = true; m.duration = 1f; m.simulationSpace = ParticleSystemSimulationSpace.Local;
+            m.startLifetime = new ParticleSystem.MinMaxCurve(0.18f, 0.3f); m.startSpeed = 0f;
+            m.startSize = new ParticleSystem.MinMaxCurve(3.5f, 5f); m.startRotation = new ParticleSystem.MinMaxCurve(0f, 6.28f);
+            m.startColor = new ParticleSystem.MinMaxGradient(new Color(1f, 0.85f, 0.55f, 0.9f), new Color(1f, 0.6f, 0.25f, 0.7f));
+            var em = ps.emission; em.rateOverTime = 30f;
+            var sh = ps.shape; sh.enabled = false;
+            var col = ps.colorOverLifetime; col.enabled = true; col.color = Grad((0f, new Color(1, 1, 1, 0f)), (0.3f, new Color(1, 1, 1, 1f)), (1f, new Color(1, 0.7f, 0.4f, 0f)));
+            ps.GetComponent<ParticleSystemRenderer>().maxParticleSize = 20f;
+            lista.Add(ps.gameObject);
+        }
+        // energía que se junta: chispas que vienen de afuera hacia el centro
+        if (brasas != null)
+        {
+            var ps = Sistema(raiz.transform, "ABSORBE", brasas);
+            var m = ps.main; m.loop = true; m.duration = 1f; m.simulationSpace = ParticleSystemSimulationSpace.Local;
+            m.startLifetime = 0.35f; m.startSpeed = -11f;    // negativo = hacia el centro de la esfera
+            m.startSize = new ParticleSystem.MinMaxCurve(0.08f, 0.2f); m.startColor = new Color(1f, 0.75f, 0.35f, 1f);
+            var em = ps.emission; em.rateOverTime = 160f;
+            var sh = ps.shape; sh.shapeType = ParticleSystemShapeType.Sphere; sh.radius = 4f; sh.radiusThickness = 0f;
+            var col = ps.colorOverLifetime; col.enabled = true; col.color = Grad((0f, new Color(1, 0.6f, 0.2f, 0f)), (0.3f, new Color(1, 0.8f, 0.4f, 1f)), (1f, new Color(1, 1, 0.9f, 1f)));
+            var tr = ps.trails; tr.enabled = true; tr.ratio = 1f; tr.lifetime = new ParticleSystem.MinMaxCurve(0.08f); tr.dieWithParticles = true;
+            ps.GetComponent<ParticleSystemRenderer>().trailMaterial = estallido;
+            lista.Add(ps.gameObject);
+        }
+        // luz que ilumina a los personajes y el piso
+        var luzGo = new GameObject("LUZ"); luzGo.transform.SetParent(raiz.transform, false);
+        var luz = luzGo.AddComponent<Light>(); luz.type = LightType.Point; luz.color = new Color(1f, 0.78f, 0.45f); luz.intensity = 0f; luz.range = 60f; luz.shadows = LightShadows.None;
+
+        // animación: diámetro (escala de la raíz) y luz
+        var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(RutaClipEnergia);
+        if (clip == null) { clip = new AnimationClip { frameRate = 30 }; AssetDatabase.CreateAsset(clip, RutaClipEnergia); }
+        clip.ClearCurves();
+        AnimationCurve Suave((float t, float v)[] k)
+        {
+            var c = new AnimationCurve(k.Select(x => new Keyframe(x.t, x.v)).ToArray());
+            for (int i = 0; i < c.length; i++) { AnimationUtility.SetKeyLeftTangentMode(c, i, AnimationUtility.TangentMode.ClampedAuto); AnimationUtility.SetKeyRightTangentMode(c, i, AnimationUtility.TangentMode.ClampedAuto); }
+            return c;
+        }
+        var cd = Suave(Diametro);
+        foreach (var eje in new[] { "x", "y", "z" }) AnimationUtility.SetEditorCurve(clip, EditorCurveBinding.FloatCurve("", typeof(Transform), "m_LocalScale." + eje), cd);
+        AnimationUtility.SetEditorCurve(clip, EditorCurveBinding.FloatCurve("LUZ", typeof(Light), "m_Intensity"), Suave(LuzEnergia));
+        EditorUtility.SetDirty(clip);
+
+        float ini = IniEnergia - InicioCiudad, dur = Diametro[Diametro.Length - 1].t;
+        var pAct = tlC.CreateTrack<ControlTrack>(grupoC, PistaEnergia);
+        foreach (var go in new[] { raiz }.Concat(lista.ToArray()))
+        {
+            var tc = pAct.CreateDefaultClip(); tc.start = ini; tc.duration = dur; tc.displayName = go.name;
+            var ca = (ControlPlayableAsset)tc.asset;
+            var er = ca.sourceGameObject; if (PropertyName.IsNullOrEmpty(er.exposedName)) er.exposedName = GUID.Generate().ToString();
+            er.defaultValue = null; ca.sourceGameObject = er;
+            ca.updateParticle = go != raiz; ca.particleRandomSeed = (uint)(go.name.GetHashCode() & 0x7fffffff); ca.active = true;
+            ca.updateDirector = false; ca.updateITimeControl = false; ca.searchHierarchy = false;
+            dirC.SetReferenceValue(er.exposedName, go);
+            EditorUtility.SetDirty(ca);
+        }
+        raiz.SetActive(false);
+        var pAn = tlC.CreateTrack<AnimationTrack>(grupoC, PistaEnergiaCrece);
+        var tca = pAn.CreateClip(clip); tca.start = ini; tca.duration = dur; tca.displayName = "Final_EnergiaManos";
+        if (tca.asset is AnimationPlayableAsset ap) ap.removeStartOffset = false;
+        pAn.trackOffset = TrackOffset.ApplySceneOffsets;
+        dirC.SetGenericBinding(pAn, an);
+        EditorUtility.SetDirty(pAct); EditorUtility.SetDirty(pAn);
+        log.AppendLine($"Bola de energía entre las palmas de {IniEnergia} a {IniEnergia + dur:0.00} s: de una chispa a {Diametro[Diametro.Length - 1].v} u de diámetro, con halo, chispas que se juntan y luz.");
+    }
+
+    // copia de un material de partículas de URP con soft particles (se desvanece al tocar geometría)
+    public static Material MaterialSuave(Material m, float distancia, string sufijo = "_Suave")
+    {
+        if (m == null) return null;
+        string ruta = System.IO.Path.ChangeExtension(AssetDatabase.GetAssetPath(m), null) + sufijo + ".mat";
+        var suave = AssetDatabase.LoadAssetAtPath<Material>(ruta);
+        if (suave == null) { suave = new Material(m); AssetDatabase.CreateAsset(suave, ruta); }
+        else suave.CopyPropertiesFromMaterial(m);
+        suave.SetFloat("_SoftParticlesEnabled", 1f);
+        suave.SetFloat("_SoftParticlesNearFadeDistance", 0f);
+        suave.SetFloat("_SoftParticlesFarFadeDistance", distancia);
+        suave.SetVector("_SoftParticleFadeParams", new Vector4(0f, 1f / distancia, 0f, 0f));
+        suave.EnableKeyword("_SOFTPARTICLES_ON");
+        EditorUtility.SetDirty(suave);
+        return suave;
     }
 
     // ================================================================= capas
