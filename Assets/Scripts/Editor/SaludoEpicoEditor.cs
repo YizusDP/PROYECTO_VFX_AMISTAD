@@ -54,7 +54,7 @@ public static class SaludoEpicoEditor
     static Vector3 U(float x, float y, float z) => M + (D * x + Lft * y + Vector3.up * z) * K;
     static Vector3 UDir(float x, float y, float z) => (D * x + Lft * y + Vector3.up * z).normalized;
 
-    [MenuItem("Tools/Amistad/Escena 8: saludo épico (49-65 s)")]
+    [MenuItem("Tools/Amistad/3 · Encuentro, saludo y final/Escena 8: saludo épico + final (49-72.9 s)", false, 301)]
     static void Aplicar()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode) { Debug.LogError("[Saludo] Sal de Play antes de correr la herramienta."); return; }
@@ -82,9 +82,10 @@ public static class SaludoEpicoEditor
         if (dirP == null || dirC == null || city == null || memi == null || ale == null || cm3 == null || pistaMemi?.infiniteClip == null || pistaAle?.infiniteClip == null || pistaCortes == null)
         { Debug.LogError("[Saludo] Falta algo (directores, CITY, MEMO_PERFIL, ALE, CM3_MEMO o las pistas de recorrido). Corre antes la escena 7 (encuentro)."); return; }
         var animA = ale.GetComponent<Animator>(); var animM = memi.GetComponent<Animator>();
-        var ctrlA = animA != null ? animA.runtimeAnimatorController as AnimatorController : null;
-        var ctrlM = animM != null ? animM.runtimeAnimatorController as AnimatorController : null;
-        if (ctrlA == null || ctrlM == null) { Debug.LogError("[Saludo] ALE o MEMO_PERFIL no tienen Animator Controller."); return; }
+        // el controller ya no va en los personajes (lo quita CuerpoTimelineEditor); si no está, se usa el asset
+        var ctrlA = (animA != null ? animA.runtimeAnimatorController as AnimatorController : null) ?? AssetDatabase.LoadAssetAtPath<AnimatorController>(CuerpoTimelineEditor.ControllerAle);
+        var ctrlM = (animM != null ? animM.runtimeAnimatorController as AnimatorController : null) ?? AssetDatabase.LoadAssetAtPath<AnimatorController>(CuerpoTimelineEditor.ControllerMemi);
+        if (ctrlA == null || ctrlM == null) { Debug.LogError("[Saludo] No encuentro ALE.controller o MEMI.controller."); return; }
         var pjA = lay.chars.First(c => c.name == "ale"); var pjM = lay.chars.First(c => c.name == "memi");
 
         // ---------- 1. FBX del saludo -> clips humanoides
@@ -180,11 +181,13 @@ public static class SaludoEpicoEditor
         }
 
         // ---------- 6. Cámaras (movimiento horneado del previz) y cortes
-        var grupoP = Grupo(tlP, "8 · Saludo · cámaras");
-        Undo.RecordObject(pistaCortes, "Saludo"); Undo.RecordObject(dirP, "Saludo");
+        // las cámaras del saludo viven en el Timeline de la ciudad (el principal solo tiene Bosque, Título, Ciudad, Cámaras y Audio)
+        foreach (var viejoG in tlP.GetRootTracks().OfType<GroupTrack>().Where(g => g.name == "8 · Saludo · cámaras").ToList()) tlP.DeleteTrack(viejoG);
+        var grupoP = Grupo(tlC, "8 · Saludo · cámaras");
+        Undo.RecordObject(pistaCortes, "Saludo"); Undo.RecordObject(dirP, "Saludo"); Undo.RecordObject(dirC, "Saludo");
         // quitar lo de versiones anteriores (cámaras que ya no existen)
         foreach (var vieja in pistaCortes.GetClips().Where(c => c.displayName.StartsWith("CM8_") && !NombresCam.Contains(c.displayName)).ToList()) tlP.DeleteClip(vieja);
-        foreach (var vieja in tlP.GetOutputTracks().Where(tr => tr.parent == grupoP && !NombresCam.Any(n => tr.name == n + " · mov")).ToList()) tlP.DeleteTrack(vieja);
+        foreach (var vieja in tlC.GetOutputTracks().Where(tr => tr.parent == grupoP && !NombresCam.Any(n => tr.name == n + " · mov")).ToList()) tlC.DeleteTrack(vieja);
         foreach (var vieja in raiz.Cast<Transform>().Where(ch => ch.name.StartsWith("CM8_") && !NombresCam.Contains(ch.name)).ToList()) Undo.DestroyObjectImmediate(vieja.gameObject);
         for (int i = 0; i < lay.cams.Length && i < NombresCam.Length; i++)
         {
@@ -202,7 +205,7 @@ public static class SaludoEpicoEditor
             EditorUtility.SetDirty(vcam);
             var an = Obtener<Animator>(t.gameObject);
             var clip = ClipCamara($"{Carpeta}/{nombre}.anim", bc, fps, t);
-            var pista = ClipEnPista(tlP, dirP, grupoP, nombre + " · mov", an, clip, Inicio, durSaludo);
+            var pista = ClipEnPista(tlC, dirC, grupoP, nombre + " · mov", an, clip, Inicio - InicioCiudad, durSaludo);
             pista.trackOffset = TrackOffset.ApplyTransformOffsets; pista.position = Vector3.zero; pista.eulerAngles = Vector3.zero;
 
             int f0 = lay.cuts[i].frame; int f1 = i + 1 < lay.cuts.Length ? lay.cuts[i + 1].frame : lay.frames + 1;
@@ -324,6 +327,11 @@ public static class SaludoEpicoEditor
             if (!data.renderPostProcessing) { Undo.RecordObject(data, "Saludo"); data.renderPostProcessing = true; EditorUtility.SetDirty(data); log.AppendLine($"{camPrincipal.name}: Post Processing activado"); }
         }
         log.AppendLine($"Choque a los {Inicio + tHit:F2} s del principal (agarre en {grip}); flash, chispas, onda, estallido, contraluces y volumes listos.");
+
+        // ---------- 8b. Caminata y saludo como pistas del Timeline (para verlos en el preview, no solo en Play)
+        if (!CuerpoTimelineEditor.Hornear(log)) log.AppendLine("OJO: no se pudo pasar el cuerpo al Timeline (ver arriba).");
+        if (!SaludoAjustesEditor.Aplicar(log)) log.AppendLine("OJO: no se pudieron aplicar los ajustes (media cara de Ale, encuadre final).");
+        if (!FinalTituloEditor.Aplicar(log)) log.AppendLine("OJO: no se pudo armar el final (alejar, explosión, negro y título).");
 
         // ---------- 9. Guardar
         foreach (var o in new UnityEngine.Object[] { tlC, tlP, pistaCortes, dirP, dirC, pistaAle.infiniteClip, pistaMemi.infiniteClip }) EditorUtility.SetDirty(o);

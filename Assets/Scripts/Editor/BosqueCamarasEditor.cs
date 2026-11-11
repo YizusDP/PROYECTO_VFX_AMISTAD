@@ -10,7 +10,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.Timeline;
 
 /// <summary>
-/// Tools > Amistad > Bosque: cascada + disolvencia al gato
+/// Tools > Amistad > 1 · Bosque > Cascada + disolvencia al gato
 /// Parte el dolly viejo de CM1_CASCADA en dos tomas con corte seco, y quita el tramo del giro entre ellas:
 ///   CM1_CASCADA (0 -> Corte): avanza suave por el tramo recto del spline (0 a 623.6), mirando la cascada.
 ///   CM1_GATO   (Corte -> 11.95): mismo spline y mismo LookAt; arranca en el knot 2 (fin del giro), se acerca al gato,
@@ -21,7 +21,7 @@ using UnityEngine.Timeline;
 /// La curva original se respalda la primera vez en Assets/Animaciones/CM1_CASCADA_dolly_original.anim.
 /// Se puede volver a correr: todos los valores son absolutos.
 ///
-/// Tools > Amistad > Capturas del bosque
+/// Tools > Amistad > Revisión y pruebas > Capturas del bosque
 /// Guarda lo que ve la Main Camera en Logs/capturas_bosque/t_XX.png (sin la disolvencia, que es UI). Recarga la escena al final.
 /// </summary>
 public static class BosqueCamarasEditor
@@ -65,7 +65,7 @@ public static class BosqueCamarasEditor
         new Keyframe(FinDisolvencia, CascadaFin, CascadaVelFinal, CascadaVelFinal),
     };
 
-    [MenuItem("Tools/Amistad/Bosque: cascada + disolvencia al gato")]
+    [MenuItem("Tools/Amistad/1 · Bosque/Cascada + disolvencia al gato", false, 100)]
     static void Aplicar()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode) { Debug.LogError("[Bosque] Sal de Play antes de correr la herramienta."); return; }
@@ -269,7 +269,7 @@ public static class BosqueCamarasEditor
         EditorUtility.SetDirty(shot);
     }
 
-    [MenuItem("Tools/Amistad/Capturas del bosque")]
+    [MenuItem("Tools/Amistad/Revisión y pruebas/Capturas del bosque", false, 911)]
     static void Capturar()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode) { Debug.LogError("[Capturas bosque] Sal de Play."); return; }

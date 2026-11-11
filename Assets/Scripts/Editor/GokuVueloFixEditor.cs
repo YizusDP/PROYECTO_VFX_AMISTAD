@@ -5,9 +5,9 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// Tools > Amistad > Goku: revisar vuelo
+/// Tools > Amistad > Revisión y pruebas > Goku: revisar vuelo
 ///   Vuelca a Logs/goku_vuelo/curvas.txt los músculos (Humanoid) del ciclo de vuelo y de los power up base/SSJ.
-/// Tools > Amistad > Goku: corregir vuelo
+/// Tools > Amistad > 2 · Ciudad > Goku: corregir vuelo
 ///   Genera dos clips Humanoid a partir del ciclo de vuelo de Blender (goku_base_vuelo.fbx) y guarda fotos de prueba:
 ///   - Goku_Vuelo_Fix.anim: mismo ciclo, pero el retarget dejaba las espinillas torcidas (Lower Leg Twist 1.87, fuera
 ///     del rango -1..1) y los pies volteados. Giro de espinilla y de pie en 0, pies en punta, sin objetivos de IK
@@ -35,7 +35,7 @@ public static class GokuVueloFixEditor
 
     static AnimationClip ClipDe(string fbx) => AssetDatabase.LoadAllAssetsAtPath(fbx).OfType<AnimationClip>().FirstOrDefault(c => !c.name.StartsWith("__preview__"));
 
-    [MenuItem("Tools/Amistad/Goku: revisar vuelo")]
+    [MenuItem("Tools/Amistad/Revisión y pruebas/Goku: revisar vuelo", false, 919)]
     static void Revisar()
     {
         var log = new StringBuilder();
@@ -57,7 +57,7 @@ public static class GokuVueloFixEditor
         Debug.Log("[Goku vuelo] Logs/goku_vuelo/curvas.txt");
     }
 
-    [MenuItem("Tools/Amistad/Goku: corregir vuelo")]
+    [MenuItem("Tools/Amistad/2 · Ciudad/Goku: corregir vuelo", false, 225)]
     public static void Corregir()
     {
         var fuente = ClipDe(Carpeta + "goku_base_vuelo.fbx");

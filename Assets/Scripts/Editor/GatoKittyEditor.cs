@@ -8,7 +8,7 @@ using UnityEngine.Playables;
 using UnityEngine.Timeline;
 
 /// <summary>
-/// Tools > Amistad > CM1: Kitty reemplaza al gato
+/// Tools > Amistad > 1 · Bosque > Kitty reemplaza al gato (CM1)
 /// Cambia el gato viejo de CM1 (cat.fbx: malla estática sin huesos) por Kitty_001 (ithappy, con huesos y animaciones).
 ///   - El Kitty va como HIJO del objeto 'cat': hereda el movimiento que ya hace catTimeline (quieto, avanza poquito,
 ///     sale disparado a los 7.75 s). No se toca ese movimiento.
@@ -36,7 +36,7 @@ public static class GatoKittyEditor
     const float FinCarrera = 10.13f;  // termina el tramo rápido
     const float Fin = 17.5f;
 
-    [MenuItem("Tools/Amistad/CM1: Kitty reemplaza al gato")]
+    [MenuItem("Tools/Amistad/1 · Bosque/Kitty reemplaza al gato (CM1)", false, 101)]
     static void Aplicar()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode) { Debug.LogError("[Kitty] Sal de Play."); return; }

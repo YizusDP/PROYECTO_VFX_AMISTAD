@@ -9,7 +9,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.Timeline;
 
 /// <summary>
-/// Tools > Amistad > Goku: prueba de transformaciones
+/// Tools > Amistad > Revisión y pruebas > Goku: prueba de transformaciones
 /// 1) Importa los 4 FBX de Goku como Humanoid a la escala de la escena (MC: 17 u = 2 m).
 /// 2) Pone a Goku base, SSJ y SSJ3 en el mismo lugar de CITY, fuera de la toma de CM3_MEMO
 ///    (detrás de donde termina el dolly) y lejos de MC y de Godzilla.
@@ -74,7 +74,7 @@ public static class GokuPruebaEditor
     const double Swap = 118.0 / 30.0;    // 3.933 s
     const double Largo = 6.0;            // cada clip dura 6 s (0–180 a 30 fps)
 
-    [MenuItem("Tools/Amistad/Goku: prueba de transformaciones")]
+    [MenuItem("Tools/Amistad/Revisión y pruebas/Goku: prueba de transformaciones", false, 918)]
     static void Aplicar()
     {
         var log = new StringBuilder();

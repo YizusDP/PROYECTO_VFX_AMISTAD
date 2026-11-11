@@ -8,7 +8,7 @@ using UnityEngine.Playables;
 using UnityEngine.Timeline;
 
 /// <summary>
-/// Tools > Amistad > CM4: primera persona en la avioneta + Goku SSJ
+/// Tools > Amistad > 2 · Ciudad > CM4: primera persona en la avioneta + Goku SSJ
 /// Secuencia (tiempos del principal):
 ///   31.6        corte a la vista del piloto (AVIONETA_POV, en la cabina) mientras la avioneta sigue sobre la avenida.
 ///   32.6-33.9   la vista voltea 130° a la izquierda, por encima del hombro (lo anima AvionetaEditor en el clip de vuelo).
@@ -57,7 +57,7 @@ public static class GokuVueloEditor
         return k <= 0f || k >= 1f ? 0f : Mathf.Sin(k * Mathf.PI);
     }
 
-    [MenuItem("Tools/Amistad/CM4: primera persona en la avioneta + Goku SSJ")]
+    [MenuItem("Tools/Amistad/2 · Ciudad/CM4: primera persona en la avioneta + Goku SSJ", false, 222)]
     static void Aplicar()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode) { Debug.LogError("[CM4] Sal de Play."); return; }

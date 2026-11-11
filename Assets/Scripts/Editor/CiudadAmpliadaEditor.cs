@@ -10,7 +10,7 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 /// <summary>
-/// Tools > Amistad > Ciudad: ampliar (más grande)
+/// Tools > Amistad > 2 · Ciudad > Ampliar (más grande)
 /// Agranda la ciudad para la caminata de Ale (después de 23 s) y para que el fondo se sienta enorme:
 /// 1) PISO: losetas extra del mismo piso (mismo material y tiling) alrededor del original.
 /// 2) AVENIDA_ALE: la calle por donde camina Memi (hueco entre ruim.005 y ruim.007, X = AvenidaX) sigue hacia -Z,
@@ -48,7 +48,7 @@ public static class CiudadAmpliadaEditor
     static float R(float a, float b) => a + (float)rng.NextDouble() * (b - a);
     static float Yaw() => rng.Next(4) * 90f + R(-5f, 5f);
 
-    [MenuItem("Tools/Amistad/Ciudad: ampliar (más grande)")]
+    [MenuItem("Tools/Amistad/2 · Ciudad/Ampliar (más grande)", false, 200)]
     static void Ampliar()
     {
         if (EditorApplication.isPlaying) { Debug.LogError("[Ciudad] Sal de Play primero."); return; }
@@ -239,7 +239,7 @@ public static class CiudadAmpliadaEditor
         Capturas(niebla);
     }
 
-    [MenuItem("Tools/Amistad/Ciudad: capturas de revisión")]
+    [MenuItem("Tools/Amistad/Revisión y pruebas/Ciudad: capturas de revisión", false, 913)]
     static void SoloCapturas()
     {
         var city = GameObject.Find("CITY");
@@ -247,7 +247,7 @@ public static class CiudadAmpliadaEditor
         Capturas(dir != null ? dir.GetComponent<NieblaCiudad>() : null);
     }
 
-    [MenuItem("Tools/Amistad/Ciudad: quitar ampliación")]
+    [MenuItem("Tools/Amistad/2 · Ciudad/Quitar ampliación", false, 201)]
     static void Quitar()
     {
         var city = GameObject.Find("CITY");

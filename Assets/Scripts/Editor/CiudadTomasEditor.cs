@@ -9,7 +9,7 @@ using UnityEngine.Playables;
 using UnityEngine.Timeline;
 
 /// <summary>
-/// Tools > Amistad > Ciudad: Memi de perfil + Ale + recorrer derrumbe
+/// Tools > Amistad > 2 · Ciudad > Memi de perfil + Ale + recorrer derrumbe
 /// Nuevo orden de la ciudad (tiempos del Timeline principal):
 ///   17.5 - 20.5  CM3_MEMO_PERFIL  Memi camina de perfil; el edificio sigue entero y Godzilla aún no aparece.
 ///   20.5 - 23.5  CM3_ALE          Ale camina de perfil al otro extremo de la avenida, hacia Memi.
@@ -46,7 +46,7 @@ public static class CiudadTomasEditor
     const string NombrePerfil = "CM3_MEMO_PERFIL";
     const string NombreAle = "CM3_ALE";
 
-    [MenuItem("Tools/Amistad/Ciudad: Memi de perfil + Ale + recorrer derrumbe")]
+    [MenuItem("Tools/Amistad/2 · Ciudad/Memi de perfil + Ale + recorrer derrumbe", false, 220)]
     static void Aplicar()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode) { Debug.LogError("[Ciudad tomas] Sal de Play antes de correr la herramienta."); return; }
@@ -140,7 +140,9 @@ public static class CiudadTomasEditor
         pistaAle.trackOffset = TrackOffset.ApplyTransformOffsets;
         pistaAle.infiniteClipOffsetPosition = inicioAle;
         pistaAle.infiniteClipOffsetEulerAngles = new Vector3(0, dirZ > 0 ? 0 : 180, 0);
-        var animAle = ale.GetComponent<Animator>();
+        // si ya existe el armado padre/hijo (CuerpoTimelineEditor), el recorrido mueve a ALE_RAIZ y no al personaje
+        var raizAle = ale.parent != null && ale.parent.name == ale.name + "_RAIZ" ? ale.parent : null;
+        var animAle = raizAle != null ? raizAle.GetComponent<Animator>() : ale.GetComponent<Animator>();
         if (animAle != null) { Undo.RecordObject(animAle, "Ciudad tomas"); animAle.applyRootMotion = false; }
         dirC.SetGenericBinding(pistaVis, ale.gameObject);
         dirC.SetGenericBinding(pistaAle, animAle);

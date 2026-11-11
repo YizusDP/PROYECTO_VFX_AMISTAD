@@ -12,7 +12,7 @@ using UnityEngine.Timeline;
 using BlendMode = UnityEngine.Rendering.BlendMode;
 
 /// <summary>
-/// Tools > Amistad > Derrumbar edificio (ruim.008)
+/// Tools > Amistad > 2 · Ciudad > Derrumbar edificio (ruim.008)
 ///  1. Parte la malla del edificio en sus piezas sueltas (losas y columnas).
 ///  2. Simula con física un derrumbe progresivo: fallan las columnas de planta baja del lado hacia donde
 ///     ya se inclina el edificio, el bloque de arriba cae y se ladea, y al golpear rompe el siguiente piso.
@@ -75,7 +75,7 @@ public static class DerrumbeEditor
 
     struct Evento { public float t; public Vector3 pos; public float e; public int tipo; public Vector3 tam; }
 
-    [MenuItem("Tools/Amistad/Derrumbar edificio (ruim.008)")]
+    [MenuItem("Tools/Amistad/2 · Ciudad/Derrumbar edificio (ruim.008)", false, 204)]
     static void Hornear()
     {
         var escena = SceneManager.GetActiveScene();
@@ -1001,7 +1001,7 @@ public static class DerrumbeEditor
     const float MomentoIdeal = 35.0f;       // explota cuando Goku llega volando, antes del SSJ (tiempo del principal)
     const float BuscarDesde = 33.5f, BuscarHasta = 40.6f;
 
-    [MenuItem("Tools/Amistad/Derrumbar edificio seleccionado (explosión)")]
+    [MenuItem("Tools/Amistad/2 · Ciudad/Derrumbar edificio seleccionado (explosión)", false, 205)]
     static void DerrumbarSeleccionado()
     {
         var sel = Selection.activeTransform;
@@ -1142,7 +1142,7 @@ public static class DerrumbeEditor
     {
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(RutaExplosionGato);
         if (prefab == null) return "No encontré " + RutaExplosionGato;
-        var bosque = SceneManager.GetActiveScene().GetRootGameObjects().FirstOrDefault(g => g.name == "BOSQUE");
+        var bosque = SceneManager.GetActiveScene().GetRootGameObjects().SelectMany(g => g.GetComponentsInChildren<Transform>(true)).Select(t => t.gameObject).FirstOrDefault(g => g.name == "BOSQUE");
         var original = bosque == null ? null : bosque.GetComponentsInChildren<Transform>(true)
             .Where(t => PrefabUtility.IsAnyPrefabInstanceRoot(t.gameObject) && PrefabUtility.GetCorrespondingObjectFromSource(t.gameObject) == prefab)
             .Select(t => t.gameObject).FirstOrDefault();

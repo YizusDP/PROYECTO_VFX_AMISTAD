@@ -5,10 +5,10 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// Tools > Amistad > Gato: revisar modelo
+/// Tools > Amistad > Revisión y pruebas > Gato: revisar modelo
 ///   Revisa el gato actual de CM1 (instancia de cat.fbx en la escena): jerarquía, malla, materiales, texturas, huesos, Animator.
 ///   Log en Logs/gato/info.txt y fotos en Logs/gato/vista_*.png.
-/// Tools > Amistad > Gato: revisar Kitty (ithappy)
+/// Tools > Amistad > Revisión y pruebas > Gato: revisar Kitty (ithappy)
 ///   Revisa Assets/ithappy/Animals_FREE/Prefabs/Kitty_001.prefab y lo compara en tamaño con el gato actual.
 ///   Log en Logs/gato/kitty_info.txt; fotos en Logs/gato/kitty_vista_*.png y poses de cada clip en Logs/gato/kitty_<clip>_<n>.png.
 /// Ambas usan copias temporales (HideAndDontSave): no tocan la escena. Se pueden volver a correr.
@@ -128,7 +128,7 @@ public static class GatoRevisionEditor
         System.IO.Directory.CreateDirectory("Logs/gato");
     }
 
-    [MenuItem("Tools/Amistad/Gato: revisar modelo")]
+    [MenuItem("Tools/Amistad/Revisión y pruebas/Gato: revisar modelo", false, 916)]
     static void Revisar()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode) { Debug.LogError("[Gato] Sal de Play."); return; }
@@ -153,7 +153,7 @@ public static class GatoRevisionEditor
         Debug.Log("[Gato] Listo: Logs/gato/info.txt\n" + log);
     }
 
-    [MenuItem("Tools/Amistad/Gato: revisar Kitty (ithappy)")]
+    [MenuItem("Tools/Amistad/Revisión y pruebas/Gato: revisar Kitty (ithappy)", false, 917)]
     static void RevisarKitty()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode) { Debug.LogError("[Gato] Sal de Play."); return; }

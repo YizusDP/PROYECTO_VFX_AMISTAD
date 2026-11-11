@@ -9,7 +9,7 @@ using UnityEngine.Rendering;
 using UnityEngine.Timeline;
 
 /// <summary>
-/// Tools > Amistad > Goku: aura Ki y SSJ
+/// Tools > Amistad > 2 · Ciudad > Goku: aura Ki y SSJ
 /// Arma la carga de Ki y la transformación a Super Saiyajin sobre la toma CM4 (tiempos del Timeline principal,
 /// los mismos que GokuVueloEditor):
 ///   35.0 - 38.93  carga de Ki: aura delgada blanco-azul que late cada vez más rápido, motas que se juntan hacia el
@@ -25,7 +25,7 @@ using UnityEngine.Timeline;
 ///   4. En el Timeline de la ciudad, grupo "Goku": pista de animación "Goku · aura Ki" (curvas de carga, mezcla,
 ///      destello, rayos y tiempo en Goku_AuraKi.anim, se pueden retocar en el Timeline) y 3 Control Tracks de partículas.
 /// Correr DESPUÉS de "CM4: primera persona en la avioneta + Goku SSJ". Se puede volver a correr (reemplaza lo anterior).
-/// Tools > Amistad > Goku: quitar aura Ki  deja todo como estaba antes.
+/// Tools > Amistad > 2 · Ciudad > Goku: quitar aura Ki  deja todo como estaba antes.
 /// </summary>
 public static class GokuAuraEditor
 {
@@ -58,7 +58,7 @@ public static class GokuAuraEditor
     };
 
     // ======================================================================================================
-    [MenuItem("Tools/Amistad/Goku: aura Ki y SSJ")]
+    [MenuItem("Tools/Amistad/2 · Ciudad/Goku: aura Ki y SSJ", false, 223)]
     static void Crear()
     {
         var log = new StringBuilder();
@@ -266,7 +266,7 @@ public static class GokuAuraEditor
         Debug.Log("[Aura Ki] Listo. Guarda la escena con Ctrl+S y revisa el Timeline de 35 a 43 s.\n" + log);
     }
 
-    [MenuItem("Tools/Amistad/Goku: quitar aura Ki")]
+    [MenuItem("Tools/Amistad/2 · Ciudad/Goku: quitar aura Ki", false, 224)]
     static void QuitarMenu()
     {
         if (!Buscar(out var tlC, out var dirC, out var goku, out var gBase, out var gSSJ)) return;

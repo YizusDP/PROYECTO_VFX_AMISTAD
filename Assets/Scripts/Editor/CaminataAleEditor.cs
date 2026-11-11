@@ -9,7 +9,7 @@ using UnityEngine.Playables;
 using UnityEngine.Timeline;
 
 /// <summary>
-/// Tools > Amistad > Escena: caminata de Ale (43-46 s)
+/// Tools > Amistad > 2 · Ciudad > Caminata de Ale (43-46 s)
 /// Toma nueva entre CM4_SigueGoku y CM7_ENCUENTRO: Ale caminando hacia el encuentro, de cuerpo completo.
 ///  - Antes Ale recorría ese tramo fuera de cuadro a 4x su paso; ahora desde los 43 s camina a su paso normal
 ///    (4.5 u/s, el mismo del encuentro) para que los pies no patinen. Lo que le falta lo sigue haciendo antes, fuera de cuadro.
@@ -29,7 +29,7 @@ public static class CaminataAleEditor
     const float Lateral = 26f, Adelante = 10f, Altura = 9f, AlturaMirada = 9.5f, Fov = 40f;
     const string NombreCam = "CM5_ALE_CAMINA";
 
-    [MenuItem("Tools/Amistad/Escena: caminata de Ale (43-46 s)")]
+    [MenuItem("Tools/Amistad/2 · Ciudad/Caminata de Ale (43-46 s)", false, 226)]
     static void Aplicar()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode) { Debug.LogError("[Caminata Ale] Sal de Play antes de correr la herramienta."); return; }
@@ -89,7 +89,7 @@ public static class CaminataAleEditor
         var t = T(NombreCam);
         if (t == null) { var go = new GameObject(NombreCam); Undo.RegisterCreatedObjectUndo(go, NombreCam); t = go.transform; }
         Undo.RecordObject(t, NombreCam);
-        t.SetParent(null, true);
+        if (t.parent != null && (t.parent.lossyScale - Vector3.one).sqrMagnitude > 1e-6f) t.SetParent(null, true);   // en una carpeta (escala 1) se queda
         t.SetPositionAndRotation(posCam, Quaternion.LookRotation(mira - posCam, Vector3.up));
         t.localScale = Vector3.one;
         var vcam = t.GetComponent<CinemachineCamera>(); if (vcam == null) vcam = Undo.AddComponent<CinemachineCamera>(t.gameObject);

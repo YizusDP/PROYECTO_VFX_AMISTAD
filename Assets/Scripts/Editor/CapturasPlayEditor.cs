@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Playables;
 
-/// Tools > Amistad > Capturas en Play (toma de la ciudad)
+/// Tools > Amistad > Revisión y pruebas > Capturas en Play (toma de la ciudad, tiempo real)
 /// Entra a Play y guarda el Game view en Logs/capturas_play/t_XX.png en varios segundos del Timeline principal; luego sale de Play.
 [InitializeOnLoad]
 public static class CapturasPlayEditor
@@ -17,7 +17,7 @@ public static class CapturasPlayEditor
         if (SessionState.GetBool(Clave, false)) { siguiente = 0; EditorApplication.update += Tick; }
     }
 
-    [MenuItem("Tools/Amistad/Capturas en Play (toma de la ciudad)")]
+    [MenuItem("Tools/Amistad/Revisión y pruebas/Capturas en Play (toma de la ciudad, tiempo real)", false, 912)]
     static void Iniciar()
     {
         System.IO.Directory.CreateDirectory("Logs/capturas_play");

@@ -11,7 +11,7 @@ using UnityEngine.Timeline;
 using BlendMode = UnityEngine.Rendering.BlendMode;
 
 /// <summary>
-/// Tools > Amistad > Ciudad: caos (fuego, polvo, suciedad, radiación)
+/// Tools > Amistad > 2 · Ciudad > Caos (fuego, polvo, suciedad, radiación)
 /// Llena la ciudad ampliada de caos, por zonas sobre la avenida por donde camina Ale (X = X0, hacia -Z):
 ///   ZONA FUEGO (z -470 a -1100): escombros ardiendo a la orilla de la calle y edificios en llamas (prefab Fuego_VFX).
 ///   ZONA POLVO (z -900 a -1400): nube espesa, polvo rasante y polvo que cae de los edificios.
@@ -48,7 +48,7 @@ public static class CiudadCaosEditor
         ParticleSystemVertexStream.AgePercent
     };
 
-    [MenuItem("Tools/Amistad/Ciudad: caos (fuego, polvo, suciedad, radiación)")]
+    [MenuItem("Tools/Amistad/2 · Ciudad/Caos (fuego, polvo, suciedad, radiación)", false, 202)]
     static void Crear()
     {
         if (EditorApplication.isPlaying) { Debug.LogError("[Caos] Sal de Play primero."); return; }
@@ -342,7 +342,7 @@ public static class CiudadCaosEditor
         Debug.Log("[Caos] " + log.ToString().Replace("\n", " | "));
     }
 
-    [MenuItem("Tools/Amistad/Ciudad: capturas del caos")]
+    [MenuItem("Tools/Amistad/Revisión y pruebas/Ciudad: capturas del caos", false, 914)]
     static void SoloCapturas()
     {
         var city = GameObject.Find("CITY");

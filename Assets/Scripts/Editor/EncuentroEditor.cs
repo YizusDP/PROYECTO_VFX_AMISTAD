@@ -8,7 +8,7 @@ using UnityEngine.Playables;
 using UnityEngine.Timeline;
 
 /// <summary>
-/// Tools > Amistad > Escena 7: encuentro (46-49 s)
+/// Tools > Amistad > 3 · Encuentro, saludo y final > Escena 7: encuentro (46-49 s)
 /// Memi y Ale llegan caminando (cada uno entra a cuadro por un lado) y se detienen frente a frente.
 ///  - Memi: después de su toma sigue caminando a su paso (fuera de cuadro) hasta el punto de encuentro.
 ///  - Ale: camina a su paso en su toma (20.5-23.5), recorre fuera de cuadro lo que le falta y entra al encuentro a su paso.
@@ -39,7 +39,7 @@ public static class EncuentroEditor
     const float Lado = 1f;              // +1: cámara del lado +X; -1: del lado -X
     const string NombreCam = "CM7_ENCUENTRO";
 
-    [MenuItem("Tools/Amistad/Escena 7: encuentro (46-49 s)")]
+    [MenuItem("Tools/Amistad/3 · Encuentro, saludo y final/Escena 7: encuentro (46-49 s)", false, 300)]
     static void Aplicar()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode) { Debug.LogError("[Encuentro] Sal de Play antes de correr la herramienta."); return; }

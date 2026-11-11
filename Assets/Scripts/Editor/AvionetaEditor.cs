@@ -9,7 +9,7 @@ using UnityEngine.Playables;
 using UnityEngine.Timeline;
 
 /// <summary>
-/// Tools > Amistad > Godzilla: pasa la avioneta
+/// Tools > Amistad > 2 · Ciudad > Godzilla: pasa la avioneta
 /// Al final de la toma de Godzilla aparece la avioneta: viene de atrás de Godzilla por la derecha, pasa rozándole la cabeza,
 /// baja en picada hacia la cámara, pasa a un lado y se aleja por la avenida en llamas. Se ladea en las vueltas.
 ///  - Material TOON_Avioneta (shader TOON_Godzilla con la textura de la avioneta, sin emisión) en el prefab.
@@ -62,7 +62,7 @@ public static class AvionetaEditor
         return c != null ? c : Undo.AddComponent<TC>(go);
     }
 
-    [MenuItem("Tools/Amistad/Godzilla: pasa la avioneta")]
+    [MenuItem("Tools/Amistad/2 · Ciudad/Godzilla: pasa la avioneta", false, 221)]
     static void Aplicar()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode) { Debug.LogError("[Avioneta] Sal de Play."); return; }

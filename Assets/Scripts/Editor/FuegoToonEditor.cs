@@ -5,7 +5,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 
 /// <summary>
-/// Tools > Amistad > Ciudad: fuego estilo caricatura
+/// Tools > Amistad > 2 · Ciudad > Fuego estilo caricatura
 /// Cambia el fuego de la ciudad (Fuego_VFX, llamas realistas) por el estilo de las explosiones (la del gato y la del derrumbe):
 /// esferas que se disuelven con ruido, núcleo amarillo y borde oscuro (shader Explosion, material Explosion_Ciudad).
 ///   1. Crea/actualiza Assets/Assets/shaders/FuegoVFX/Fuego_Toon.prefab: copia de Fuego_VFX (mismo tamaño, humo, brasas y luz)
@@ -45,7 +45,7 @@ public static class FuegoToonEditor
     const float Sube = 1.9f;             // velocidad hacia arriba respecto a las llamas originales (forma la lengua de fuego)
     const float Ancho = 0.6f;           // radio de la base respecto al de las llamas originales
 
-    [MenuItem("Tools/Amistad/Ciudad: fuego estilo caricatura")]
+    [MenuItem("Tools/Amistad/2 · Ciudad/Fuego estilo caricatura", false, 203)]
     static void Aplicar()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode) { Debug.LogError("[FuegoToon] Sal de Play."); return; }
@@ -265,10 +265,10 @@ public static class FuegoToonEditor
         b.orbitalX = a.orbitalX; b.orbitalY = a.orbitalY; b.orbitalZ = a.orbitalZ; b.radial = a.radial; b.speedModifier = a.speedModifier;
     }
 
-    // Tools > Amistad > Ciudad: probar fuego caricatura
+    // Tools > Amistad > Revisión y pruebas > Ciudad: probar fuego caricatura
     // Pone Fuego_VFX y Fuego_Toon lado a lado (copias temporales, lejos de todo), simula 3 s y guarda
     // Logs/fuego_toon/prueba.png + medidas de las llamas de cada uno en prueba.txt. No toca la escena.
-    [MenuItem("Tools/Amistad/Ciudad: probar fuego caricatura")]
+    [MenuItem("Tools/Amistad/Revisión y pruebas/Ciudad: probar fuego caricatura", false, 915)]
     static void Probar()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode) return;
