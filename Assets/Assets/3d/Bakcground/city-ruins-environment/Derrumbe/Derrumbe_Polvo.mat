@@ -30,6 +30,10 @@ Material:
     m_Ints: []
     m_Floats:
     - _Ancho: 0.85
+    - _Borde: 0.08
+    - _CorteMedio: 0.42
+    - _CortePunta: 0.72
+    - _Cubre: 0.3
     - _Distorsion: 0.22
     - _DstBlend: 10
     - _Erosion: 0.85
@@ -39,9 +43,12 @@ Material:
     - _Modo: 2
     - _SrcBlend: 5
     - _SuavidadSuelo: 6
+    - _Toon: 0
+    - _Umbral: 0.16
     - _Velocidad: 0.6
     m_Colors:
     - _ColorBase: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorBorde: {r: 0.06, g: 0.012, b: 0, a: 1}
     - _ColorMedio: {r: 6, g: 1.5, b: 0.12, a: 1}
     - _ColorPunta: {r: 10, g: 6, b: 2.2, a: 1}
   m_BuildTextureStacks: []

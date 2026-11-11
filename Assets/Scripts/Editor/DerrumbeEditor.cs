@@ -178,9 +178,20 @@ public static class DerrumbeEditor
             p.losa = s.x > 50f && s.z > 50f && s.y < 30f;
         }
         var losas = piezas.Where(p => p.losa).ToList();
+        // Modo ruina (2026-11-11): edificios muy rotos (p. ej. ruim.009) no tienen losas planas, sus pisos son trozos
+        // chuecos de ~90x70x60 u. Se usan como "losas" los trozos más horizontales y todo el edificio cuenta como marco.
+        bool ruina = false;
+        if (losas.Count < 2)
+        {
+            foreach (var p in piezas) { var s = p.b.size; p.losa = s.x > 40f && s.z > 40f && s.y < 1.4f * Mathf.Max(s.x, s.z); }
+            losas = piezas.Where(p => p.losa).ToList();
+            ruina = losas.Count >= 2;
+            if (ruina) log.AppendLine($"Modo ruina: sin losas planas, uso {losas.Count} trozos horizontales como pisos.");
+        }
         if (losas.Count < 2) { EditorUtility.DisplayDialog("Derrumbe", "No encontré losas en " + edificio.name + " (esta herramienta es para edificios de losas y columnas).", "OK"); return; }
         var techo = losas.OrderByDescending(p => p.b.max.y).First();
         var rect = techo.b; rect.Expand(new Vector3(24f, 0f, 24f));
+        if (ruina) { rect = piezas[0].b; foreach (var p in piezas) rect.Encapsulate(p.b); rect.Expand(new Vector3(2f, 0f, 2f)); }
         foreach (var p in piezas)
         {
             var c = p.b.center;
@@ -587,7 +598,7 @@ public static class DerrumbeEditor
                     float caida = bloqueY0 - bloque.worldCenterOfMass.y;
                     float hPiso = Mathf.Max(1f, hs[bloqueK + 1] - hs[bloqueK]);
                     bool golpe = caida > 0.45f * hPiso && bloqueVyMin < -0.3f * Mathf.Sqrt(2f * g * hPiso) && vy > 0.35f * bloqueVyMin;
-                    if (golpe || caida > 0.7f * hPiso || t - bloqueT0 > 0.9f)
+                    if (golpe || caida > 0.7f * hPiso || t - bloqueT0 > (ruina ? 0.25f : 0.9f))   // modo ruina: ~20 pisos muy juntos, no esperar 0.9 s en cada uno
                     {
                         log.AppendLine($"t={t:0.00}: aterriza el bloque sobre el piso {bloqueK} (cayó {caida:0.0} u, vel {bloqueVyMin:0.0} u/s{(golpe ? "" : ", por tiempo")})");
                         Separar(t);

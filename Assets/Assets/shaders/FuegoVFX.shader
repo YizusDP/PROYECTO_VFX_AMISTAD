@@ -174,7 +174,16 @@ Shader "Amistad/Fuego VFX"
                     float bocanada = saturate(1.0 - r) * saturate(n1 * 0.85 + n2 * 0.5 - 0.3);
                     bocanada = smoothstep(0.0, 0.55, bocanada);
                     half3 c = _ColorBase.rgb * i.color.rgb;
-                    return half4(c, bocanada * i.color.a * suave);
+                    // Estilo caricatura (solo si _Toon > 0; los humos que ya existian tienen _Toon = 0 y no cambian):
+                    // silueta de corte nitido con el ruido grande, nucleo un poco mas claro y orilla de tinta.
+                    float bocT = smoothstep(0.0, 0.55, saturate(1.0 - r) * saturate(n1 * 1.1 - 0.2));
+                    float dentroH = smoothstep(_Umbral, _Umbral + 0.03, bocT);
+                    float orillaH = dentroH * (1.0 - smoothstep(_Umbral + _Borde, _Umbral + _Borde + 0.03, bocT));
+                    half3 cT = c * lerp(0.88, 1.08, step(_CortePunta, bocT));
+                    cT = lerp(cT, _ColorBorde.rgb * i.color.rgb, orillaH);
+                    half3 col = lerp(c, cT, _Toon);
+                    float aH = lerp(bocanada, dentroH * 0.92, _Toon);
+                    return half4(col, aH * i.color.a * suave);
                 }
 
                 // ---------- FUEGO: llama procedural ----------

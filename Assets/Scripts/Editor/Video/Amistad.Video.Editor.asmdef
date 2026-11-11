@@ -1,0 +1,27 @@
+{
+    "name": "Amistad.Video.Editor",
+    "rootNamespace": "",
+    "references": [
+        "Unity.Recorder.Editor",
+        "Unity.Recorder"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "AMISTAD_RECORDER"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.recorder",
+            "expression": "",
+            "define": "AMISTAD_RECORDER"
+        }
+    ],
+    "noEngineReferences": false
+}

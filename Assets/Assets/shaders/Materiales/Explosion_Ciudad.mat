@@ -53,7 +53,6 @@ Material:
     m_Floats:
     - _Dissolve1: 0
     - _Dissolve2: 0.648
-    - _Opacidad: 0.7
     - _QueueControl: 0
     - _QueueOffset: 0
     - _SmoothStep: 0.2

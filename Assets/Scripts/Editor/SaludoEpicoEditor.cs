@@ -251,11 +251,8 @@ public static class SaludoEpicoEditor
         // resplandor de fondo (rosa) de los primeros planos: con soft particles, para que no se vea su orilla dura
         // donde atraviesa el piso en el plano abierto (copia del material: el original lo usan otros efectos)
         Estallido(estallido.gameObject, NuclearDetalleEditor.MaterialSuave(matBrillo, 25f), s);
-        var rimA = Raiz("SALUDO_CONTRALUZ_ALE", raiz); var rimM = Raiz("SALUDO_CONTRALUZ_MEMI", raiz);
-        Contraluz(rimA, U(-0.3f, 2.2f, 1.7f), U(pjA.place[0], 0, 1.1f), K);
-        Contraluz(rimM, U(0.3f, 2.2f, 1.7f), U(pjM.place[0], 0, 1.1f), K);
-        foreach (var (nom, go) in new[] { ("estallido", estallido.gameObject), ("contraluz Ale", rimA.gameObject), ("contraluz Memi", rimM.gameObject) })
-            Activar(tlC, dirC, grupoC, "Saludo · " + nom, go, t0, durSaludo);
+        // (2026-11-11) sin luces de contraluz SALUDO_CONTRALUZ_*: el toon es Unlit y no las recibe (el borde lo da "Borde de luz")
+        Activar(tlC, dirC, grupoC, "Saludo · estallido", estallido.gameObject, t0, durSaludo);
 
         // ---------- 8. Look rojo + golpe de exposición en el impacto (Volumes)
         var perfilLook = Perfil(Carpeta + "/Saludo_Look.asset", p =>
@@ -286,15 +283,9 @@ public static class SaludoEpicoEditor
         if (lay.faceLights != null)
             foreach (var lz in lay.faceLights)
             {
-                var t = Raiz("SALUDO_LUZ_" + lz.name.ToUpper(), raiz);
-                var dir = UDir(lz.dir[0], lz.dir[1], lz.dir[2]);
-                t.SetPositionAndRotation(U(lz.pos[0], lz.pos[1], lz.pos[2]), Quaternion.LookRotation(dir, Vector3.up));
-                var l = Obtener<Light>(t.gameObject); Undo.RecordObject(l, "Saludo");
-                l.type = LightType.Spot; l.range = 4f * K; l.spotAngle = 34f; l.innerSpotAngle = 16f;
-                l.intensity = 650f; l.color = new Color(1f, 0.93f, 0.85f); l.shadows = LightShadows.Soft;
-                EditorUtility.SetDirty(l);
+                // (2026-11-11) ya no se crean las luces SALUDO_LUZ_CARA* (sin efecto con el toon Unlit; la media cara la hace
+                // el sol, ver SaludoAjustesEditor). Solo se usan sus tiempos para el volumen de sombra.
                 float a = t0 + (lz.startFrame - 1) / fps, b = t0 + lz.endFrame / fps;
-                Activar(tlC, dirC, grupoC, "Saludo · luz " + lz.name, t.gameObject, a, b - a);
                 iniSombra = Mathf.Min(iniSombra, a); finSombra = Mathf.Max(finSombra, b);
             }
         if (finSombra > 0f)

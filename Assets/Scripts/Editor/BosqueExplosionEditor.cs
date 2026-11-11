@@ -29,6 +29,10 @@ public static class BosqueExplosionEditor
     const string Carpeta = "Assets/Animaciones/Bosque";
     static readonly Vector3 PosPolvoCamino = new Vector3(3222f, 10f, 420f);   // camino entre la explosión y la cámara del gato (piso y = 5)
     static readonly (float t, float v)[] Luz = { (0f, 0f), (0.05f, 150000f), (0.4f, 50000f), (1.5f, 10000f), (3f, 0f) };   // a ~310 u: necesita intensidad alta (como LUZ_CHOQUE)
+    // humo oscuro (ver Capas): cáscara del tamaño de las bolas de fuego, corrida hacia la cámara
+    const float HumoRadio = 140f, HumoRitmo = 70f;
+    static readonly Vector2 HumoTam = new Vector2(120f, 220f);
+    static readonly Vector3 HumoCorrimiento = new Vector3(0f, 80f, -160f);   // bolas: centros z 530–800, y 50–460 (medido en Play)
     static readonly (float t, float v)[] Temblor = { (0f, 0f), (0.04f, 14f), (0.4f, 6f), (0.75f, 9f), (1.2f, 3f), (2.2f, 0f) };
 
     [MenuItem("Tools/Amistad/1 · Bosque/Explosión del bosque: a tiempo con el gato + humo y polvo")]
@@ -105,7 +109,7 @@ public static class BosqueExplosionEditor
 
         // ---------- 3. temblor de cámara en CM1_GATO: DESACTIVADO. Esa cámara usa CinemachineSplineDollyLookAtTargets y con
         //            cualquier ruido de Perlin (ganancia > 0) gira ~105° de golpe. Se quitan el Perlin y la pista si existían.
-        var cam = todos.FirstOrDefault(t => t.name == "CM1_GATO");
+        var cam = todos.FirstOrDefault(t => t != null && t.name == "CM1_GATO");   // t != null: la lista trae el humo viejo ya borrado
         if (cam != null) { var pv = cam.GetComponent<CinemachineBasicMultiChannelPerlin>(); if (pv != null) Undo.DestroyObjectImmediate(pv); }
         if (false)
         {
@@ -193,16 +197,23 @@ public static class BosqueExplosionEditor
             ps.GetComponent<ParticleSystemRenderer>().maxParticleSize = 20f;
             ps.transform.localPosition = Vector3.up * 20f; lista.Add(ps.gameObject);
         }
-        // humo oscuro de la explosión (se abre en bola y sube)
+        // humo oscuro de la explosión. Las bolas de "Explosión horizontal" miden ~380 u y son de recorte alfa (opacas): un humo
+        // más chico o en el centro queda tapado. Por eso sale de una cáscara del tamaño de las bolas, corrida hacia la cámara
+        // (las cámaras del gato y del título miran hacia +Z), va saliendo mientras las bolas se apagan, sube y se deshace con
+        // turbulencia (antes se juntaba en una bola oscura que flotaba encima del título). (2026-11-11)
         {
             var ps = Sistema(raiz, "HUMO_OSCURO", humoOsc);
-            var m = ps.main; m.duration = 0.5f; m.startDelay = 0.1f; m.startLifetime = new ParticleSystem.MinMaxCurve(6f, 9f); m.startSpeed = new ParticleSystem.MinMaxCurve(70f, 140f);
-            m.startSize = new ParticleSystem.MinMaxCurve(80f, 150f); m.startRotation = new ParticleSystem.MinMaxCurve(0f, 6.28f); m.gravityModifier = -0.06f;
-            var em = ps.emission; em.rateOverTime = 0; em.SetBursts(new[] { new ParticleSystem.Burst(0f, 120) });
-            var sh = ps.shape; sh.shapeType = ParticleSystemShapeType.Sphere; sh.radius = 40f;   // sale hacia afuera: enmarca las bolas amarillas
-            var lim = ps.limitVelocityOverLifetime; lim.enabled = true; lim.limit = 8f; lim.dampen = 0.05f;
-            var sz = ps.sizeOverLifetime; sz.enabled = true; sz.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0, 0.7f, 1, 2.2f));
-            var col = ps.colorOverLifetime; col.enabled = true; col.color = Grad((0f, new Color(1f, 0.5f, 0.2f, 0f)), (0.08f, new Color(0.45f, 0.3f, 0.22f, 0.9f)), (0.5f, new Color(0.22f, 0.19f, 0.18f, 0.8f)), (1f, new Color(0.2f, 0.18f, 0.17f, 0f)));
+            var m = ps.main; m.duration = 3f; m.startDelay = 0.1f; m.startLifetime = new ParticleSystem.MinMaxCurve(5f, 7f); m.startSpeed = new ParticleSystem.MinMaxCurve(20f, 50f);
+            m.startSize = new ParticleSystem.MinMaxCurve(HumoTam.x, HumoTam.y); m.startRotation = new ParticleSystem.MinMaxCurve(0f, 6.28f); m.gravityModifier = -0.05f; m.maxParticles = 400;
+            var em = ps.emission; em.rateOverTime = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0f, 8f), new Keyframe(0.35f, HumoRitmo), new Keyframe(1f, 15f)));
+            em.SetBursts(new[] { new ParticleSystem.Burst(0.05f, 12) });
+            var sh = ps.shape; sh.shapeType = ParticleSystemShapeType.Sphere; sh.radius = HumoRadio; sh.radiusThickness = 0.35f;
+            var lim = ps.limitVelocityOverLifetime; lim.enabled = true; lim.limit = 12f; lim.dampen = 0.05f;
+            var nz = ps.noise; nz.enabled = true; nz.strength = 10f; nz.frequency = 0.004f; nz.scrollSpeed = 0.25f; nz.octaveCount = 2; nz.quality = ParticleSystemNoiseQuality.Medium;
+            var rot = ps.rotationOverLifetime; rot.enabled = true; rot.z = new ParticleSystem.MinMaxCurve(-0.3f, 0.3f);
+            var sz = ps.sizeOverLifetime; sz.enabled = true; sz.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0, 0.6f, 1, 1.9f));
+            var col = ps.colorOverLifetime; col.enabled = true; col.color = Grad((0f, new Color(1f, 0.5f, 0.2f, 0f)), (0.07f, new Color(0.5f, 0.3f, 0.2f, 0.95f)), (0.35f, new Color(0.24f, 0.2f, 0.19f, 0.95f)), (0.75f, new Color(0.22f, 0.19f, 0.18f, 0.7f)), (1f, new Color(0.2f, 0.18f, 0.17f, 0f)));
+            ps.transform.position = raiz.position + HumoCorrimiento;
             lista.Add(ps.gameObject);
         }
         // columna de humo que sigue subiendo (se ve por encima de los árboles hasta el título)
@@ -213,8 +224,11 @@ public static class BosqueExplosionEditor
             var em = ps.emission; em.rateOverTime = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0, 70f, 1, 12f));
             var sh = ps.shape; sh.shapeType = ParticleSystemShapeType.Cone; sh.angle = 18f; sh.radius = 25f; sh.rotation = new Vector3(-90f, 0f, 0f);
             var lim = ps.limitVelocityOverLifetime; lim.enabled = true; lim.limit = 14f; lim.dampen = 0.03f;
-            var sz = ps.sizeOverLifetime; sz.enabled = true; sz.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0, 0.8f, 1, 2.6f));
-            var col = ps.colorOverLifetime; col.enabled = true; col.color = Grad((0f, new Color(0.9f, 0.55f, 0.3f, 0f)), (0.1f, new Color(0.55f, 0.47f, 0.42f, 0.75f)), (0.6f, new Color(0.42f, 0.38f, 0.36f, 0.55f)), (1f, new Color(0.4f, 0.37f, 0.35f, 0f)));
+            // turbulencia y giro: sin esto las partículas viejas se juntaban arriba en un disco gris (visible en el título)
+            var nz = ps.noise; nz.enabled = true; nz.strength = 8f; nz.frequency = 0.004f; nz.scrollSpeed = 0.2f; nz.octaveCount = 2; nz.quality = ParticleSystemNoiseQuality.Medium;
+            var rot = ps.rotationOverLifetime; rot.enabled = true; rot.z = new ParticleSystem.MinMaxCurve(-0.25f, 0.25f);
+            var sz = ps.sizeOverLifetime; sz.enabled = true; sz.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0, 0.8f, 1, 3.2f));
+            var col = ps.colorOverLifetime; col.enabled = true; col.color = Grad((0f, new Color(0.9f, 0.55f, 0.3f, 0f)), (0.1f, new Color(0.55f, 0.47f, 0.42f, 0.75f)), (0.5f, new Color(0.42f, 0.38f, 0.36f, 0.5f)), (1f, new Color(0.4f, 0.37f, 0.35f, 0f)));
             lista.Add(ps.gameObject);
         }
         // onda de polvo (anillo horizontal que se abre rápido)
