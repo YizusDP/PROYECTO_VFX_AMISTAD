@@ -16,7 +16,7 @@ using UnityEngine;
 [InitializeOnLoad]
 public static class ExportarVideoEditor
 {
-    const string Clave = "Amistad_ExportarVideo", ClaveRuta = "Amistad_ExportarRuta", ClaveAlto = "Amistad_ExportarAlto";
+    const string Clave = "Amistad_ExportarVideo", ClaveRuta = "Amistad_ExportarRuta", ClaveAlto = "Amistad_ExportarAlto", ClaveVista = "Amistad_ExportarVista";
     const float Inicio = 0f, Fin = 72.9f, Fps = 30f;
     static RecorderController control;
 
@@ -40,6 +40,7 @@ public static class ExportarVideoEditor
         Directory.CreateDirectory(carpeta);
         SessionState.SetString(ClaveRuta, Path.Combine(carpeta, $"AMISTAD_{(alto >= 2160 ? "4K" : "1080p")}_{DateTime.Now:yyyy-MM-dd_HHmm}"));
         SessionState.SetInt(ClaveAlto, alto);
+        SessionState.SetInt(ClaveVista, TamanoVista(-1));   // el Recorder cambia el tamaño del Game view: se regresa al terminar
         SessionState.SetBool(Clave, true);
         Debug.Log("[Video] Entrando a Play para grabar 0 – 72.9 s…");
         EditorApplication.isPlaying = true;
@@ -52,8 +53,26 @@ public static class ExportarVideoEditor
         else if (estado == PlayModeStateChange.EnteredEditMode)
         {
             SessionState.SetBool(Clave, false);
+            int vista = SessionState.GetInt(ClaveVista, -1);
+            if (vista >= 0) TamanoVista(vista);
             Debug.Log("[Video] Listo: " + SessionState.GetString(ClaveRuta, "") + ".mp4");
         }
+    }
+
+    // Lee (indice < 0) o pone el tamaño seleccionado del Game view (p. ej. "Full HD"). Devuelve el índice que había.
+    static int TamanoVista(int indice)
+    {
+        try
+        {
+            var tipo = typeof(Editor).Assembly.GetType("UnityEditor.GameView");
+            var vistas = Resources.FindObjectsOfTypeAll(tipo);
+            if (vistas.Length == 0) return -1;
+            var prop = tipo.GetProperty("selectedSizeIndex", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+            int antes = (int)prop.GetValue(vistas[0], null);
+            if (indice >= 0) { prop.SetValue(vistas[0], indice, null); ((EditorWindow)vistas[0]).Repaint(); }
+            return antes;
+        }
+        catch { return -1; }
     }
 
     static void Empezar()
