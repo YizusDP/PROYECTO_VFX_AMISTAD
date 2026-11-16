@@ -348,6 +348,8 @@ public static class FinalTituloEditor
         erT.defaultValue = null; shot.VirtualCamera = erT;
         dirP.SetReferenceValue(erT.exposedName, vcamT);
         EditorUtility.SetDirty(shot); EditorUtility.SetDirty(cortes);
+        // secuencia épica: el # nace con chispas, luego AMISTAD, golpe de energía y se apaga a negro
+        if (!TituloEpicoEditor.Agregar(grupo.transform, tlC, dirC, grupoTl, durT, log)) log.AppendLine("OJO: no se pudo armar el título épico.");
         log.AppendLine($"T\u00EDtulo final: {letras.Count} letras copiadas a TITULO_FINAL (lejos de todo) con fondo negro; CM_TITULO_FINAL a {dist:0} u, se acerca {Acercamiento * 100:0}%; aparece desde negro en {FundidoEntra} s y se va a negro al final ({IniTitulo}-{FinCorto} s). La ciudad termina a los {IniTitulo} s.");
 
         EditorUtility.SetDirty(tlP); EditorUtility.SetDirty(tlC);

@@ -29,6 +29,14 @@ Shader "Amistad/Letras Radiactivas v2"
         [Header(Borde y luz)]
         _PotenciaBorde ("Finura del borde", Range(0.5, 8)) = 3
         _LuzToon ("Cuánto lo afecta el sol", Range(0, 1)) = 0.6
+        [Header(Liquido que escurre solo en el titulo final)]
+        _Escurrido ("Cuánto ha escurrido (0-1)", Range(0, 1)) = 0
+        _BrilloEscurrido ("Brillo del líquido", Range(0, 2)) = 1
+        _YMinOS ("Base de la letra (objeto)", Float) = 0
+        _YMaxOS ("Tope de la letra (objeto)", Float) = 55
+        _AnchoColumna ("Separación de los chorros (objeto)", Float) = 6
+        [HDR] _ColorLiquido ("Líquido: brillo", Color) = (1.3, 6.5, 0.35, 1)
+        _ColorLiquidoOscuro ("Líquido: contorno", Color) = (0.0, 0.1, 0.01, 1)
     }
     SubShader
     {
@@ -42,6 +50,8 @@ Shader "Amistad/Letras Radiactivas v2"
             float _Pulso, _FuerzaPulso, _LargoBarrido, _VelocidadBarrido, _AnchoBarrido;
             float4 _EjeBarrido;
             float _PotenciaBorde, _LuzToon;
+            float _Escurrido, _BrilloEscurrido, _YMinOS, _YMaxOS, _AnchoColumna;
+            half4 _ColorLiquido, _ColorLiquidoOscuro;
         CBUFFER_END
         ENDHLSL
 
@@ -154,6 +164,46 @@ Shader "Amistad/Letras Radiactivas v2"
                 emision += _ColorBarrido.rgb * barrido * barrido * (0.4 + 0.6 * frente);
 
                 half3 col = cuerpo + emision;
+
+                // ---------- líquido radiactivo que escurre desde arriba de la letra ----------
+                // Chorros por columnas (en X del objeto): cada uno baja hasta un largo al azar; con _Escurrido = 1 los
+                // más largos llegan a la base y gotean (las gotas que caen son partículas). Gota redonda en la punta.
+                if (_Escurrido > 0.001)
+                {
+                    float alto = max(1.0, _YMaxOS - _YMinOS);
+                    float d = saturate((_YMaxOS - i.posOS.y) / alto);              // 0 arriba, 1 abajo
+                    float cel = i.posOS.x / _AnchoColumna + i.semilla * 7.0;
+                    float id = floor(cel);
+                    float fx = frac(cel) - 0.5;
+                    float3 r = Hash3(float3(id, i.semilla * 31.0, 4.7));
+                    float retraso = r.y * 0.35;
+                    float largo = lerp(0.25, 1.08, r.x) * saturate((_Escurrido - retraso) / (1.0 - retraso));
+                    float ancho = lerp(0.24, 0.4, r.z);
+                    float adelgaza = 1.0 - 0.35 * saturate(d / max(largo, 0.01));
+                    float w = ancho * adelgaza;
+                    float chorro = step(abs(fx), w) * step(d, largo);
+                    float chorroIn = step(abs(fx), w * 0.7) * step(d, largo - 0.01);
+                    // gota en la punta (redonda en unidades del objeto)
+                    float2 gp = float2(fx * _AnchoColumna, (d - largo) * alto);
+                    float rg = ancho * _AnchoColumna * 1.3;
+                    float hay = step(0.02, largo);
+                    float gota = step(length(gp), rg) * hay;
+                    float gotaIn = step(length(gp), rg * 0.72) * hay;
+                    // capa que cubre la parte de arriba de la letra
+                    float capa = step(d, 0.08 * saturate(_Escurrido * 3.0));
+                    float capaIn = step(d, 0.08 * saturate(_Escurrido * 3.0) - 0.015);
+                    // solo en la cara de enfrente/atrás y arriba (en los lados las columnas saldrían como rayas)
+                    float caras = saturate(frente + step(0.5, nOS.y));
+                    float liq = saturate(chorro + gota + capa) * caras;
+                    float dentro = saturate(chorroIn + gotaIn + capaIn);
+                    // estilo caricatura: contorno oscuro + relleno neón + brillo que baja por el centro
+                    float centro = 1.0 - saturate(abs(fx) / max(w * 0.7, 0.01));
+                    float baja = step(0.82, frac(d * 5.0 - t * 1.1 + r.x * 3.0)) * chorroIn;
+                    half3 liqCol = lerp(_ColorLiquidoOscuro.rgb, _ColorLiquido.rgb, dentro);
+                    liqCol = lerp(liqCol, _ColorLiquido.rgb * 1.6 + 0.6, saturate(step(0.55, centro) * chorroIn * 0.6 + baja + step(length(gp - float2(-rg * 0.3, rg * 0.3)), rg * 0.25) * gotaIn));
+                    col = lerp(col, liqCol * _BrilloEscurrido, liq);
+                }
+
                 col = MixFog(col, i.fog);
                 return half4(col, 1.0);
             }

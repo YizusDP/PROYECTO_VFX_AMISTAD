@@ -45,7 +45,7 @@ Material:
     - _Estirar: 0.1
     - _Grosor: 0.12
     - _Intensidad: 0.9
-    - _Llamas: 1.8
+    - _Llamas: 1.1
     - _Mezcla: 1
     - _PotenciaFresnel: 1.2
     - _QueueControl: 0
