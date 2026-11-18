@@ -42,7 +42,7 @@ Assets/
   Settings/                URP (PC_RPAsset y Mobile_RPAsset) y perfiles de volumen
   Terceros/ithappy/        Modelo del gato (Kitty) de ithappy
 Herramientas_archivadas/   Herramientas de editor que armaron el corto, fuera de Assets (ver su LEEME)
-Docs/                      Capturas de iluminación antes/después y scripts de apoyo
+Docs/                      Capturas de iluminación antes/después, perfilado con y sin LOD, scripts de apoyo
 Blender/                   Gato_animaciones.blend (animaciones propias del gato)
 ```
 
@@ -84,6 +84,10 @@ La Ciudad usa tiempo local: **tiempo local = tiempo del principal − 17.5 s**. 
 | `MiradaFija`, `PosturaErguida`, `SaludoControl`, `VelocidadAnimator`, `CaminataSencilla` | Ajustes de los personajes en el encuentro y el saludo |
 | `GirarHelice`, `VegetacionPiso` | Hélice de la avioneta, vegetación del bosque |
 | `ControlReproduccion` | Controles del build: pausa, reinicio, FPS y salir |
+
+## Optimización
+
+Los edificios de la ciudad (`Sketchfab_2016_10_12_16_48_01.fbx`, el 71 % de los triángulos de la escena) usan **Mesh LOD** de Unity 6: *Generate Mesh LODs* en el importador, con 8 o 9 niveles por edificio. El perfilado del corto completo, con y sin LOD, está en `Docs/perfilado_*_2026-11-17.csv`, y la comparación visual en `Docs/comparacion_lod_2026-11-17.jpg`.
 
 ## Créditos de recursos externos
 
