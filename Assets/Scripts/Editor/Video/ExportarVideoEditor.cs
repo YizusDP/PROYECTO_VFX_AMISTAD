@@ -16,8 +16,8 @@ using UnityEngine;
 [InitializeOnLoad]
 public static class ExportarVideoEditor
 {
-    const string Clave = "Amistad_ExportarVideo", ClaveRuta = "Amistad_ExportarRuta", ClaveAlto = "Amistad_ExportarAlto", ClaveVista = "Amistad_ExportarVista";
-    const float Inicio = 0f, Fin = 72.9f, Fps = 30f;
+    const string Clave = "Amistad_ExportarVideo", ClaveRuta = "Amistad_ExportarRuta", ClaveAlto = "Amistad_ExportarAlto", ClaveVista = "Amistad_ExportarVista", ClaveFps = "Amistad_ExportarFps";
+    const float Inicio = 0f, Fin = 72.9f;
     static RecorderController control;
 
     static ExportarVideoEditor()
@@ -32,13 +32,20 @@ public static class ExportarVideoEditor
     [MenuItem("Tools/Amistad/Revisión y pruebas/Exportar video MP4 4K (sin audio)", false, 951)]
     public static void Exportar4K() { Exportar(2160); }
 
+    // Para la entrega: 4K a 60 fps y 100 Mbps. Luego se baja a 1080p con ffmpeg (supermuestreo: quita el serrucho y el ruido).
+    [MenuItem("Tools/Amistad/Revisión y pruebas/Exportar video MP4 4K 60 fps (entrega, sin audio)", false, 952)]
+    public static void Exportar4K60() { Exportar(2160, 60); }
+
     // alto = 1080 (1920x1080) o 2160 (4K, 3840x2160)
-    public static void Exportar(int alto)
+    public static void Exportar(int alto) { Exportar(alto, 30); }
+
+    public static void Exportar(int alto, int fps)
     {
+        SessionState.SetInt(ClaveFps, fps);
         if (EditorApplication.isPlaying) { Debug.LogError("[Video] Sal de Play primero."); return; }
         var carpeta = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Recordings"));
         Directory.CreateDirectory(carpeta);
-        SessionState.SetString(ClaveRuta, Path.Combine(carpeta, $"AMISTAD_{(alto >= 2160 ? "4K" : "1080p")}_{DateTime.Now:yyyy-MM-dd_HHmm}"));
+        SessionState.SetString(ClaveRuta, Path.Combine(carpeta, $"AMISTAD_{(alto >= 2160 ? "4K" : "1080p")}{fps}_{DateTime.Now:yyyy-MM-dd_HHmm}"));
         SessionState.SetInt(ClaveAlto, alto);
         SessionState.SetInt(ClaveVista, TamanoVista(-1));   // el Recorder cambia el tamaño del Game view: se regresa al terminar
         SessionState.SetBool(Clave, true);
@@ -88,7 +95,7 @@ public static class ExportarVideoEditor
         {
             // 4K: calidad personalizada con más bits (con "High" a 4K se ve comprimido en el fuego y el humo)
             enc.EncodingQuality = CoreEncoderSettings.VideoEncodingQuality.Custom;
-            enc.TargetBitRate = 60f;                       // Mbps
+            enc.TargetBitRate = SessionState.GetInt(ClaveFps, 30) >= 60 ? 100f : 60f;   // Mbps
             enc.EncodingProfile = CoreEncoderSettings.H264EncodingProfile.High;
             enc.KeyframeDistance = 30;
         }
@@ -101,7 +108,7 @@ public static class ExportarVideoEditor
         ajustes.AddRecorderSettings(video);
         ajustes.SetRecordModeToTimeInterval(Inicio, Fin);
         ajustes.FrameRatePlayback = FrameRatePlayback.Constant;
-        ajustes.FrameRate = Fps;
+        ajustes.FrameRate = SessionState.GetInt(ClaveFps, 30);
         ajustes.CapFrameRate = true;
 
         control = new RecorderController(ajustes);
